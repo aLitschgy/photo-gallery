@@ -1,0 +1,21 @@
+{
+  "name": "photo-gallery",
+  "version": "1.0.0",
+  "description": "une galerie photos",
+  "homepage": "https://github.com/aLitschgy/photo-gallery#readme",
+  "bugs": {
+    "url": "https://github.com/aLitschgy/photo-gallery/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/aLitschgy/photo-gallery.git"
+  },
+  "license": "MIT",
+  "author": "Antonin Litschgy",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  }
+}

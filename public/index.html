@@ -1,0 +1,64 @@
+<body>
+  <div id="gallery" class="gallery"></div>
+
+  <script type="module">
+    import justifiedLayout from "https://cdn.jsdelivr.net/npm/justified-layout@3.0.0/+esm";
+    import PhotoSwipeLightbox from "https://unpkg.com/photoswipe/dist/photoswipe-lightbox.esm.js";
+
+    async function loadGallery() {
+      const images = await fetch('/gallery.json').then(r => r.json());
+      const container = document.getElementById('gallery');
+
+      // Format pour justifiedLayout
+      const aspectRatios = images.map(img => img.width / img.height);
+
+      const layout = justifiedLayout(aspectRatios, {
+        containerWidth: container.clientWidth,
+        targetRowHeight: 200,
+        boxSpacing: 5
+      });
+
+      layout.boxes.forEach((box, i) => {
+        const img = images[i];
+
+        const link = document.createElement("a");
+        link.href = img.src;
+        link.setAttribute("data-pswp-width", img.width);
+        link.setAttribute("data-pswp-height", img.height);
+        link.className = "item";
+
+        const image = document.createElement("img");
+        image.src = img.src;
+        image.style.width = box.width + "px";
+        image.style.height = box.height + "px";
+        image.style.position = "absolute";
+        image.style.left = box.left + "px";
+        image.style.top = box.top + "px";
+
+        link.appendChild(image);
+        container.appendChild(link);
+      });
+
+      new PhotoSwipeLightbox({
+        gallery: "#gallery",
+        children: ".item",
+        pswpModule: () =>
+          import("https://unpkg.com/photoswipe/dist/photoswipe.esm.js")
+      }).init();
+    }
+
+    window.addEventListener("load", loadGallery);
+  </script>
+
+  <style>
+    .gallery {
+      position: relative;
+      width: 100%;
+      max-width: 1400px;
+      margin: auto;
+    }
+    img {
+      object-fit: cover;
+    }
+  </style>
+</body>
