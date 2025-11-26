@@ -10,12 +10,18 @@ const upload = multer({ dest: "uploads/" });
 app.use(express.static("public"));
 
 app.use(session({
-  secret: "supersecret",
+  secret: process.env.SESSION_SECRET || "supersecret",
   resave: false,
   saveUninitialized: false
 }));
 
-const PASSWORD = "mypassword";
+const PASSWORD = process.env.PASSWORD || "mypassword";
+if (!process.env.SESSION_SECRET) {
+  console.warn('Warning: environment variable SESSION_SECRET is not set — falling back to insecure default.');
+}
+if (!process.env.PASSWORD) {
+  console.warn('Warning: environment variable PASSWORD is not set — falling back to insecure default.');
+}
 
 function auth(req, res, next) {
   if (req.session.logged) return next();
