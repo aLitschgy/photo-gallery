@@ -47,28 +47,40 @@ app.post("/login", express.urlencoded({ extended: true }), (req, res) => {
 });
 
 // Upload + extraction des dimensions (gestion des fichiers multiples)
-app.post("/upload", auth, upload.array("photo"), async (req, res) => {
+app.post("/upload", auth, upload.array("photo"), (req, res) => {
   const files = req.files || [];
-  for (const file of files) {
+
+  const promises = files.map((file) => {
     const originalName = file.originalname;
     const newPath = `public/photos/${originalName}`;
-    fs.renameSync(file.path, newPath);
 
-    try {
-      const extIndex = originalName.lastIndexOf('.');
-      const base = extIndex !== -1 ? originalName.slice(0, extIndex) : originalName;
-      const ext = extIndex !== -1 ? originalName.slice(extIndex) : '';
-      const thumbName = `${base}-minia${ext}`;
-      const thumbPath = `public/photos/minias/${thumbName}`;
+    return fs.promises.mkdir('public/photos', { recursive: true })
+      .then(() => fs.promises.copyFile(file.path, newPath))
+      .then(() => fs.promises.unlink(file.path))
+      .then(() => {
+        const extIndex = originalName.lastIndexOf('.');
+        const base = extIndex !== -1 ? originalName.slice(0, extIndex) : originalName;
+        const ext = extIndex !== -1 ? originalName.slice(extIndex) : '';
+        const thumbName = `${base}-minia${ext}`;
+        const thumbPath = `public/photos/minias/${thumbName}`;
 
-      await sharp(newPath)
-        .resize({ height: 1000 })
-        .toFile(thumbPath);
-    } catch (err) {
-      console.error('Échec génération miniature:', err);
-    }
-  }
-  res.redirect("/admin.html");
+        return fs.promises.mkdir('public/photos/minias', { recursive: true })
+          .then(() => sharp(newPath).resize({ height: 1000 }).toFile(thumbPath))
+          .catch((err) => {
+            console.error('Échec génération miniature:', err);
+          });
+      })
+      .catch((err) => {
+        console.error('Échec copie/suppression du fichier uploadé:', err);
+      });
+  });
+
+  Promise.all(promises)
+    .then(() => res.redirect('/admin.html'))
+    .catch((err) => {
+      console.error('Erreur lors du traitement des uploads:', err);
+      res.redirect('/admin.html');
+    });
 });
 
 app.get("/gallery.json", async (req, res) => {
