@@ -1,2 +1,7 @@
 node_modules
 public/photos/**
+README.md
+LICENSE
+Dockkerfile
+.gitignore
+.dockerignore
