@@ -1,0 +1,27 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: #060606;
+}
+
+.gallery {
+    position: relative;
+    width: 100%;
+    max-width: 1400px;
+    margin: auto;
+}
+
+img {
+    object-fit: cover;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}

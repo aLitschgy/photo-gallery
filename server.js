@@ -32,7 +32,7 @@ app.get("/login", (req, res) => {
   `);
 });
 
-app.post("/login", express.urlencoded({extended: true}), (req, res) => {
+app.post("/login", express.urlencoded({ extended: true }), (req, res) => {
   if (req.body.password === PASSWORD) {
     req.session.logged = true;
     return res.redirect("/admin.html");
@@ -40,14 +40,28 @@ app.post("/login", express.urlencoded({extended: true}), (req, res) => {
   res.send("Mot de passe incorrect");
 });
 
-// Upload + extraction des dimensions
-app.post("/upload", auth, upload.single("photo"), async (req, res) => {
-  const newPath = `public/photos/${req.file.originalname}`;
-  fs.renameSync(req.file.path, newPath);
+// Upload + extraction des dimensions (gestion des fichiers multiples)
+app.post("/upload", auth, upload.array("photo"), async (req, res) => {
+  const files = req.files || [];
+  for (const file of files) {
+    const originalName = file.originalname;
+    const newPath = `public/photos/${originalName}`;
+    fs.renameSync(file.path, newPath);
 
-  // Obtenir width/height
-  const metadata = await sharp(newPath).metadata();
+    try {
+      const extIndex = originalName.lastIndexOf('.');
+      const base = extIndex !== -1 ? originalName.slice(0, extIndex) : originalName;
+      const ext = extIndex !== -1 ? originalName.slice(extIndex) : '';
+      const thumbName = `${base}-minia${ext}`;
+      const thumbPath = `public/photos/minias/${thumbName}`;
 
+      await sharp(newPath)
+        .resize({ height: 1000 })
+        .toFile(thumbPath);
+    } catch (err) {
+      console.error('Échec génération miniature:', err);
+    }
+  }
   res.redirect("/admin.html");
 });
 
@@ -55,18 +69,21 @@ app.get("/gallery.json", async (req, res) => {
   const files = fs.readdirSync("public/photos");
 
   const images = await Promise.all(
-    files.map(async (f) => {
-      const path = `public/photos/${f}`;
-      const m = await sharp(path).metadata();
-      return {
-        src: `/photos/${f}`,
-        width: m.width,
-        height: m.height
-      };
-    })
+    files
+      .filter(f => fs.statSync(`public/photos/${f}`).isFile())
+      .map(async (f) => {
+        const path = `public/photos/${f}`;
+        const m = await sharp(path).metadata();
+        return {
+          src: `/photos/${f}`,
+          thumb: `/photos/minias/${f.replace(/(\.[^.]*)$/, '-minia$1')}`,
+          width: m.width,
+          height: m.height
+        };
+      })
   );
 
   res.json(images);
 });
 
-app.listen(3000, () => console.log("🖼️ Galerie disponible sur http://localhost:3000"));
+app.listen(3000, () => console.log("🖼️  Galerie disponible sur http://localhost:3000"));
