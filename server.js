@@ -92,4 +92,4 @@ app.get("/gallery.json", async (req, res) => {
   res.json(images);
 });
 
-app.listen(3000, () => console.log("🖼️  Galerie disponible sur http://localhost:3000"));
+app.listen(3000, () => console.log("App listening on port 3000"));
