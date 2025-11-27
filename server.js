@@ -65,7 +65,7 @@ app.post("/upload", auth, upload.array("photo"), (req, res) => {
         const thumbPath = `public/photos/minias/${thumbName}`;
 
         return fs.promises.mkdir('public/photos/minias', { recursive: true })
-          .then(() => sharp(newPath).resize({ height: 1000 }).toFile(thumbPath))
+          .then(() => sharp(newPath).rotate().resize({ height: 1000 }).toFile(thumbPath))
           .catch((err) => {
             console.error('Échec génération miniature:', err);
           });
