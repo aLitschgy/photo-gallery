@@ -91,7 +91,7 @@ app.get("/gallery.json", async (req, res) => {
       .filter(f => fs.statSync(`public/photos/${f}`).isFile())
       .map(async (f) => {
         const path = `public/photos/${f}`;
-        const m = await sharp(path).metadata();
+        const m = await sharp(path).rotate().metadata();
         return {
           src: `/photos/${f}`,
           thumb: `/photos/minias/${f.replace(/(\.[^.]*)$/, '-minia$1')}`,
