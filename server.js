@@ -46,7 +46,6 @@ app.post("/login", express.urlencoded({ extended: true }), (req, res) => {
   res.send("Mot de passe incorrect");
 });
 
-// Upload + extraction des dimensions (gestion des fichiers multiples)
 app.post("/upload", auth, upload.array("photo"), (req, res) => {
   const files = req.files || [];
 
@@ -86,20 +85,36 @@ app.post("/upload", auth, upload.array("photo"), (req, res) => {
 app.get("/gallery.json", async (req, res) => {
   const files = fs.readdirSync("public/photos");
 
-  const images = await Promise.all(
+  const images = (await Promise.all(
     files
       .filter(f => fs.statSync(`public/photos/${f}`).isFile())
       .map(async (f) => {
         const path = `public/photos/${f}`;
-        const m = await sharp(path).rotate().metadata();
-        return {
-          src: `/photos/${f}`,
-          thumb: `/photos/minias/${f.replace(/(\.[^.]*)$/, '-minia$1')}`,
-          width: m.width,
-          height: m.height
-        };
+        try {
+          const m = await sharp(path).metadata();
+          let width = m.width;
+          let height = m.height;
+          // Exif Orientation handling
+          // 5 => Rotation 270° + Symétrie horizontale
+          // 6 => Rotation 270°
+          // 7 => Rotation 90° + Symétrie horizontale
+          // 8 => Rotation 90°
+          if (m.orientation && [5, 6, 7, 8].includes(m.orientation)) {
+            [width, height] = [height, width];
+          }
+
+          return {
+            src: `/photos/${f}`,
+            thumb: `/photos/minias/${f.replace(/(\.[^.]*)$/, '-minia$1')}`,
+            width,
+            height
+          };
+        } catch (err) {
+          console.error(`Skipping file ${f}:`, err.message || err);
+          return null;
+        }
       })
-  );
+  )).filter(p => p !== null);
 
   res.json(images);
 });
