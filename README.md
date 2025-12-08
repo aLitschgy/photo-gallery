@@ -1,7 +1,7 @@
 PhotoGallery is a simple web application to display a public gallery of photos. It allows users to upload images and view them in a responsive gallery format.
 
 ## Features
-- Upload photos via a simple admin interface (/admin.html)
+- Upload photos via a simple admin interface (/admin)
 - Responsive gallery display
 - Automatic thumbnail generation for faster loading
 

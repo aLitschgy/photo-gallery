@@ -36,9 +36,9 @@ export function uploadHandler(req, res) {
     });
 
     Promise.all(promises)
-        .then(() => res.redirect('/admin.html'))
+        .then(() => res.redirect('/admin'))
         .catch((err) => {
             console.error('Erreur lors du traitement des uploads:', err);
-            res.redirect('/admin.html');
+            res.redirect('/admin');
         });
 }

@@ -9,10 +9,30 @@
 
 <body>
     <h2>Connexion</h2>
-    <form method="POST" action="/login">
-        <input type="password" name="password" />
-        <button>Entrer</button>
+    <form id="login-form">
+        <input type="password" name="password" id="password" />
+        <button type="submit">Entrer</button>
     </form>
+    <div id="error" style="color:red;"></div>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('token', data.token);
+                window.location.href = '/admin';
+            } else {
+                const err = await res.json();
+                document.getElementById('error').textContent = err.error || 'Erreur de connexion';
+            }
+        });
+    </script>
 </body>
 
 </html>
