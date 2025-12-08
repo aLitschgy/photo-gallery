@@ -1,4 +1,3 @@
-// config.js
 export const PASSWORD = process.env.PASSWORD || "mypassword";
 export const SESSION_SECRET = process.env.SESSION_SECRET || "supersecret";
 
