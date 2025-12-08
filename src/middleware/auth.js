@@ -8,7 +8,7 @@ export function auth(req, res, next) {
 export function loginHandler(req, res) {
     if (req.body.password === PASSWORD) {
         req.session.logged = true;
-        return res.redirect("/admin.html");
+        return res.redirect("/admin");
     }
     res.send("Mot de passe incorrect");
 }
