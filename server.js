@@ -28,16 +28,6 @@ function auth(req, res, next) {
   res.redirect("/login");
 }
 
-app.get("/login", (req, res) => {
-  res.send(`
-     <h2>Connexion</h2>
-     <form method="POST">
-       <input type="password" name="password" />
-       <button>Entrer</button>
-     </form>
-  `);
-});
-
 app.post("/login", express.urlencoded({ extended: true }), (req, res) => {
   if (req.body.password === PASSWORD) {
     req.session.logged = true;
