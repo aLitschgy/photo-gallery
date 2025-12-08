@@ -4,7 +4,7 @@ import session from "express-session";
 import { SESSION_SECRET } from "./config/config.js";
 import { auth, loginHandler } from "./middleware/auth.js";
 import { upload, uploadHandler } from "./routes/upload.js";
-import { galleryHandler } from "./gallery.js";
+import { galleryHandler } from "./routes/gallery.js";
 
 const app = express();
 
