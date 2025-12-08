@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <title>Admin - Uploader une photo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
 </head>
 
 <body>
@@ -16,56 +17,13 @@
   </form>
   <div id="upload-error" style="color:red;"></div>
   <div id="upload-success" style="color:green;"></div>
+  <h3>Gestion de la galerie</h3>
+  <section style="display: flex ; flex-wrap: wrap;" id="gallery-management">
+    <!-- Les photos seront chargées ici -->
+  </section>
   <input type="button" value="Se déconnecter" onclick="logout()" />
-  <script>
-    (async function () {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        window.location.href = '/login';
-        return;
-      }
-      const res = await fetch('/api/check-token', {
-        method: 'GET',
-        headers: { 'Authorization': 'Bearer ' + token }
-      });
-      if (res.status !== 200) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
-    })();
-
-    document.getElementById('upload-form').addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const files = document.getElementById('photo').files;
-      if (!files.length) return;
-      const formData = new FormData();
-      for (const file of files) {
-        formData.append('photo', file);
-      }
-      const token = localStorage.getItem('token');
-      const res = await fetch('/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + token
-        },
-        body: formData
-      });
-      document.getElementById('upload-error').textContent = '';
-      document.getElementById('upload-success').textContent = '';
-      if (res.ok) {
-        document.getElementById('upload-success').textContent = 'Upload réussi !';
-      } else {
-        const err = await res.json().catch(() => ({}));
-        document.getElementById('upload-error').textContent = err.error || 'Erreur lors de l\'upload';
-      }
-    });
-
-    function logout() {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-
-  </script>
+  <script src="/assets/js/verify-token.js"></script>
+  <script src="/assets/js/admin.js"></script>
 </body>
 
 </html>

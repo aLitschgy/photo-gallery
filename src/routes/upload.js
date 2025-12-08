@@ -1,7 +1,6 @@
 import multer from "multer";
 import sharp from "sharp";
 import fs from "fs";
-import { auth } from "../middleware/auth.js";
 
 const upload = multer({ dest: "uploads/" });
 

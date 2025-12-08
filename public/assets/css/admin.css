@@ -1,0 +1,24 @@
+.photo-item {
+    position: relative;
+    display: inline-block;
+    margin: 8px;
+}
+
+.photo-item img {
+    display: block;
+    border-radius: 8px;
+}
+
+.photo-item button {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
