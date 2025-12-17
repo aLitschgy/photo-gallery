@@ -8,6 +8,9 @@ RUN npm install --omit=dev
 
 COPY . .
 
+RUN chmod +x /app/entrypoint.sh
+
 EXPOSE 3000
 
-CMD ["/app/entrypoint.sh", "npm", "start"]
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["npm", "start"]
