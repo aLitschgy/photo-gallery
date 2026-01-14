@@ -140,4 +140,6 @@ vite.config.ts.timestamp-*
 
 # photos
 public/photos/**
-!public/photos/minias/
+
+# database
+src/db/photos.json
