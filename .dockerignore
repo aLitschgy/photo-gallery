@@ -2,7 +2,11 @@ node_modules
 public/photos/**
 README.md
 LICENSE
-Dockkerfile
+Dockerfile
 .gitignore
 .dockerignore
 photos.json
+gallery-data/
+docker-compose.yml
+.git
+.env

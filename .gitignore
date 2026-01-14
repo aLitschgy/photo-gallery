@@ -143,3 +143,6 @@ public/photos/**
 
 # database
 src/db/photos.json
+
+# Dossier de configuration avec toutes les données
+gallery-data/

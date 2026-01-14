@@ -1,0 +1,11 @@
+services:
+  photo-gallery:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PASSWORD=${PASSWORD:-mypassword}
+      - SESSION_SECRET=${SESSION_SECRET:-supersecret}
+    volumes:
+      - ./gallery-data:/app/gallery-data
+    restart: unless-stopped
