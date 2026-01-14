@@ -5,3 +5,4 @@ LICENSE
 Dockkerfile
 .gitignore
 .dockerignore
+photos.json
