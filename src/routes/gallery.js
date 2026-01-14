@@ -1,35 +1,32 @@
 // gallery.js
 import fs from "fs";
-import sharp from "sharp";
+import { getAllPhotos } from "../db/db.js";
 
 export async function galleryHandler(req, res) {
-  const files = fs.readdirSync("public/photos");
+  // Récupère la liste des photos depuis la base de données JSON
+  const photosDB = getAllPhotos();
 
-  const images = (await Promise.all(
-    files
-      .filter(f => fs.statSync(`public/photos/${f}`).isFile())
-      .map(async (f) => {
-        const path = `public/photos/${f}`;
-        try {
-          const m = await sharp(path).metadata();
-          let width = m.width;
-          let height = m.height;
-          if (m.orientation && [5, 6, 7, 8].includes(m.orientation)) {
-            [width, height] = [height, width];
-          }
+  // Vérifie que chaque photo de la DB existe réellement
+  const images = photosDB
+    .map((photo) => {
+      const f = photo.filename;
+      const path = `public/photos/${f}`;
 
-          return {
-            src: `/photos/${f}`,
-            thumb: `/photos/minias/${f.replace(/(\.[^.]*)$/, '-minia$1')}`,
-            width,
-            height
-          };
-        } catch (err) {
-          console.error(`Skipping file ${f}:`, err.message || err);
-          return null;
-        }
-      })
-  )).filter(p => p !== null);
+      if (!fs.existsSync(path)) {
+        console.warn(`Fichier référencé dans la DB mais absent: ${f}`);
+        return null;
+      }
+
+      // Utilise les dimensions stockées dans la DB
+      return {
+        src: `/photos/${f}`,
+        thumb: `/photos/minias/${f.replace(/(\.[^.]*)$/, "-minia$1")}`,
+        width: photo.width,
+        height: photo.height,
+        lexoRank: photo.lexoRank,
+      };
+    })
+    .filter((p) => p !== null);
 
   res.json(images);
 }
