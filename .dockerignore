@@ -1,12 +1,30 @@
 node_modules
-public/photos/**
-README.md
-LICENSE
-Dockerfile
+npm-debug.log
+.DS_Store
+.git
 .gitignore
 .dockerignore
-photos.json
-gallery-data/
-docker-compose.yml
-.git
 .env
+.vscode
+docker-compose.yml
+
+# Build outputs
+build
+.svelte-kit
+dist
+
+# Old structure (no longer needed)
+backend
+frontend
+
+# Data folders (will be mounted as volumes)
+gallery-data
+uploads
+static/photos
+src/lib/server/db/photos.json
+
+# Documentation
+*.md
+!README.md
+LICENSE
+Dockerfile

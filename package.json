@@ -1,6 +1,6 @@
 {
   "name": "photo-gallery",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "description": "une galerie photos",
   "homepage": "https://github.com/aLitschgy/photo-gallery#readme",
   "bugs": {
@@ -13,20 +13,30 @@
   "license": "MIT",
   "author": "Antonin Litschgy",
   "type": "module",
-  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node build"
   },
   "dependencies": {
-    "express": "^5.1.0",
+    "@catppuccin/palette": "^1.7.1",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^2.0.2",
-    "nodemon": "^3.1.11",
-    "sharp": "^0.34.5"
+    "justified-layout": "^4.1.0",
+    "photoswipe": "^5.4.4",
+    "sharp": "^0.34.5",
+    "sortablejs": "^1.15.6"
   },
-  "nodemonConfig": {
-    "ext": "js,html,css"
+  "devDependencies": {
+    "@sveltejs/adapter-node": "^5.2.9",
+    "@sveltejs/kit": "^2.14.0",
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/justified-layout": "^4.1.4",
+    "@types/node": "^25.0.9",
+    "@types/sortablejs": "^1.15.9",
+    "svelte": "^4.2.20",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21"
   }
 }
