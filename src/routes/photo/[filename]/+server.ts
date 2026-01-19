@@ -23,7 +23,7 @@ export async function DELETE({ params, request }: RequestEvent) {
 
   const baseDir = path.join(process.cwd(), "gallery-data", "photos");
   const photoPath = path.join(baseDir, filename);
-  const thumbnailPath = path.join(baseDir, thumbName);
+  const thumbnailPath = path.join(baseDir, "minias", thumbName);
 
   try {
     await fs.promises.unlink(photoPath);
