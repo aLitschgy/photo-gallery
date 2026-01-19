@@ -22,4 +22,4 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["node", "build"]
+CMD ["node", "server.js"]

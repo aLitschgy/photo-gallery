@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 import { PASSWORD, SESSION_SECRET } from "$lib/server/config/config";
-import { json } from "@sveltejs/kit";
+import { json, type RequestEvent } from "@sveltejs/kit";
 
-export async function POST({ request }) {
+export async function POST({ request }: RequestEvent) {
   const { password } = await request.json();
 
   if (password === PASSWORD) {

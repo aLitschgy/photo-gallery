@@ -11,18 +11,6 @@ if [ ! -f /app/gallery-data/data/photos.json ]; then
   echo "Initialized photos.json"
 fi
 
-# Créer les liens symboliques pour les photos UNIQUEMENT
-# Supprimer les anciens symlinks s'ils existent (pas tout le répertoire!)
-rm -f /app/static/photos 2>/dev/null || true
-rm -f /app/build/client/photos 2>/dev/null || true
-
-# Créer les symlinks vers le volume monté
-mkdir -p /app/static
-ln -sf /app/gallery-data/photos /app/static/photos
-
-mkdir -p /app/build/client
-ln -sf /app/gallery-data/photos /app/build/client/photos
-
 # Définir le chemin de la base de données via variable d'environnement
 export DB_PATH=/app/gallery-data/data/photos.json
 
@@ -30,10 +18,10 @@ export DB_PATH=/app/gallery-data/data/photos.json
 : "${BODY_SIZE_LIMIT:=52428800}"
 export BODY_SIZE_LIMIT
 
-echo "SvelteKit data mounted from gallery-data:"
-echo "  - Photos (symlink): /app/static/photos -> /app/gallery-data/photos"
-echo "  - Photos (symlink): /app/build/client/photos -> /app/gallery-data/photos"
+echo "Photo Gallery Server Starting:"
 echo "  - Database: $DB_PATH"
+echo "  - Photos directory: /app/gallery-data/photos"
+echo "  - Static content served by Express via /photos"
 
 if [ -n "$CUSTOM_SCRIPT" ]; then
   sed "s|<!-- custom-script-placeholder -->|${CUSTOM_SCRIPT}|g" src/app.html > src/app.html.tmp && mv src/app.html.tmp src/app.html

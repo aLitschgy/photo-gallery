@@ -43,7 +43,7 @@ export const POST: RequestHandler = async ({ request }) => {
       const buffer = Buffer.from(await file.arrayBuffer());
 
       const uploadsDir = path.join(process.cwd(), "uploads");
-      const photosDir = path.join(process.cwd(), "static", "photos");
+      const photosDir = path.join(process.cwd(), "gallery-data", "photos");
       const thumbsDir = path.join(photosDir, "minias");
 
       // Ensure folders exist before any access/copy
