@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { auth } from "$lib/stores/auth";
+  import { Lock } from "lucide-svelte";
 
   let password = "";
   let error = "";
@@ -40,7 +41,7 @@
 
 <div class="login-container">
   <div class="login-box">
-    <h2>🔐 Connexion</h2>
+    <h2><Lock size={24} class="icon" /> Connexion</h2>
     <form on:submit={handleSubmit}>
       <div class="form-group">
         <label for="password">Mot de passe</label>
@@ -100,6 +101,14 @@
     margin: 0 0 1.5rem 0;
     text-align: center;
     color: var(--ctp-mocha-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  :global(.icon) {
+    color: var(--ctp-mocha-lavender);
   }
 
   .form-group {

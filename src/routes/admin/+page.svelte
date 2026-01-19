@@ -5,6 +5,14 @@
   import { browser } from "$app/environment";
   import { auth } from "$lib/stores/auth";
   import type { GalleryImage } from "$lib/types/gallery";
+  import {
+    LogOut,
+    Camera,
+    Folder,
+    Upload,
+    Trash2,
+    Lightbulb,
+  } from "lucide-svelte";
 
   let images: GalleryImage[] = [];
 
@@ -218,9 +226,9 @@
 {:else if isAuthenticated}
   <div class="container">
     <header class="header">
-      <h1>📸 Administration de la Galerie</h1>
+      <h1><Camera size={32} class="icon" /> Administration de la Galerie</h1>
       <button class="logout-btn" on:click={logout}>
-        <span>🚪</span> Déconnexion
+        <LogOut size={20} /> Déconnexion
       </button>
     </header>
 
@@ -238,7 +246,7 @@
             on:change={handleFileChange}
           />
           <label for="photo" class="file-label">
-            <span class="file-icon">📁</span>
+            <Folder size={20} />
             <span class="file-text">
               {selectedCount
                 ? `${selectedCount} image${selectedCount > 1 ? "s" : ""} sélectionnée${selectedCount > 1 ? "s" : ""}`
@@ -247,7 +255,7 @@
           </label>
         </div>
         <button type="submit" class="submit-btn" disabled={isUploading}>
-          <span>⬆️</span>
+          <Upload size={20} />
           {isUploading ? "Envoi en cours..." : "Envoyer"}
         </button>
       </form>
@@ -272,13 +280,17 @@
 
     <section class="gallery-section">
       <h2>Gestion de la galerie</h2>
-      <p class="hint">💡 Glissez-déposez les photos pour réorganiser l'ordre</p>
+      <p class="hint">
+        <Lightbulb /> Glissez-déposez les photos pour réorganiser l'ordre
+      </p>
       <div bind:this={galleryElement} class="gallery-grid">
         {#each images as photo (photo.src)}
           {@const filename = photo.src.split("/").pop()}
           <div class="photo-item" data-filename={filename}>
             <img src={photo.thumb} alt="" />
-            <button on:click={() => deletePhoto(filename)}> 🗑️ </button>
+            <button on:click={() => deletePhoto(filename)}>
+              <Trash2 size={20} />
+            </button>
           </div>
         {/each}
       </div>
@@ -329,6 +341,13 @@
     margin: 0;
     font-size: 1.5rem;
     color: var(--ctp-mocha-text);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  :global(.header h1 .icon) {
+    color: var(--ctp-mocha-lavender);
   }
 
   .logout-btn {
@@ -343,6 +362,10 @@
     gap: 0.5rem;
     font-size: 1rem;
     font-weight: 600;
+  }
+
+  :global(.logout-btn svg) {
+    color: var(--ctp-mocha-crust);
   }
 
   .logout-btn:hover {
@@ -396,6 +419,10 @@
     border-color: var(--ctp-mocha-overlay0);
   }
 
+  :global(.file-label svg) {
+    color: var(--ctp-mocha-text);
+  }
+
   .submit-btn {
     background-color: var(--ctp-mocha-green);
     color: var(--ctp-mocha-crust);
@@ -417,6 +444,10 @@
   .submit-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  :global(.submit-btn svg) {
+    color: var(--ctp-mocha-crust);
   }
 
   .upload-progress {
@@ -539,10 +570,15 @@
     justify-content: center;
     cursor: pointer;
     transition: transform 0.2s;
+    padding: 0;
   }
 
   .photo-item button:hover {
     transform: scale(1.1);
+  }
+
+  :global(.photo-item button svg) {
+    color: var(--ctp-mocha-red);
   }
 
   :global(.sortable-ghost) {
