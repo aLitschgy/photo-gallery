@@ -12,9 +12,18 @@
     Upload,
     Trash2,
     Lightbulb,
+    Tag,
+    X,
+    Plus,
   } from "lucide-svelte";
 
   let images: GalleryImage[] = [];
+  let allTags: { id: number; name: string }[] = [];
+  let selectedPhoto: GalleryImage | null = null;
+  let selectedPhotoTags: { id: number; name: string }[] = [];
+  let newTagName = "";
+  let isCreatingTag = false;
+  let tagError = "";
 
   let uploadError = "";
   let uploadSuccess = "";
@@ -46,6 +55,128 @@
     images = data.sort((a: GalleryImage, b: GalleryImage) =>
       a.lexoRank.localeCompare(b.lexoRank),
     );
+  }
+
+  async function loadTags() {
+    try {
+      const response = await fetch("/api/tags");
+      const data = await response.json();
+      allTags = data.tags || [];
+    } catch (error) {
+      console.error("Erreur lors du chargement des tags:", error);
+    }
+  }
+
+  async function openPhotoPanel(photo: GalleryImage) {
+    selectedPhoto = photo;
+    tagError = "";
+    await loadPhotoTags();
+  }
+
+  function closePhotoPanel() {
+    selectedPhoto = null;
+    selectedPhotoTags = [];
+    newTagName = "";
+    tagError = "";
+  }
+
+  async function loadPhotoTags() {
+    if (!selectedPhoto) return;
+
+    const filename = selectedPhoto.src.split("/").pop();
+    try {
+      const response = await fetch(`/api/photos/${filename}/tags`);
+      const data = await response.json();
+      selectedPhotoTags = data.tags || [];
+    } catch (error) {
+      console.error("Erreur lors du chargement des tags de la photo:", error);
+    }
+  }
+
+  async function createTag() {
+    if (!newTagName.trim()) return;
+
+    isCreatingTag = true;
+    tagError = "";
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch("/api/tags", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({ name: newTagName.trim() }),
+      });
+
+      if (response.ok) {
+        newTagName = "";
+        await loadTags();
+      } else {
+        const err = await response.json();
+        tagError = err.error || "Erreur lors de la création du tag";
+      }
+    } catch (error) {
+      tagError = "Erreur lors de la création du tag";
+    } finally {
+      isCreatingTag = false;
+    }
+  }
+
+  async function addTagToPhoto(tagId: number) {
+    if (!selectedPhoto) return;
+
+    const filename = selectedPhoto.src.split("/").pop();
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(`/api/photos/${filename}/tags`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({ tagId }),
+      });
+
+      if (response.ok) {
+        await loadPhotoTags();
+      } else {
+        const err = await response.json();
+        alert(err.error || "Erreur lors de l'ajout du tag");
+      }
+    } catch (error) {
+      alert("Erreur lors de l'ajout du tag");
+    }
+  }
+
+  async function removeTagFromPhoto(tagId: number) {
+    if (!selectedPhoto) return;
+
+    const filename = selectedPhoto.src.split("/").pop();
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `/api/photos/${filename}/tags?tagId=${tagId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: "Bearer " + token,
+          },
+        },
+      );
+
+      if (response.ok) {
+        await loadPhotoTags();
+      } else {
+        const err = await response.json();
+        alert(err.error || "Erreur lors du retrait du tag");
+      }
+    } catch (error) {
+      alert("Erreur lors du retrait du tag");
+    }
   }
 
   async function handleUpload(event: { preventDefault: () => void }) {
@@ -149,6 +280,7 @@
     await checkAuth();
     if (isAuthenticated) {
       await loadPhotos();
+      await loadTags();
 
       // Initialize Sortable after photos are loaded
       if (galleryElement) {
@@ -287,8 +419,13 @@
         {#each images as photo (photo.src)}
           {@const filename = photo.src.split("/").pop()}
           <div class="photo-item" data-filename={filename}>
-            <img src={photo.thumb} alt="" />
-            <button on:click={() => deletePhoto(filename)}>
+            <button class="photo-button" on:click={() => openPhotoPanel(photo)}>
+              <img src={photo.thumb} alt="" />
+            </button>
+            <button
+              class="delete-button"
+              on:click={() => deletePhoto(filename)}
+            >
               <Trash2 size={20} />
             </button>
           </div>
@@ -296,6 +433,85 @@
       </div>
     </section>
   </div>
+
+  <!-- Panneau latéral pour gérer les tags -->
+  {#if selectedPhoto}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="side-panel-overlay" on:click={closePhotoPanel}></div>
+    <div class="side-panel">
+      <div class="side-panel-header">
+        <h3>Gestion de la photo</h3>
+        <button class="close-btn" on:click={closePhotoPanel}>
+          <X size={24} />
+        </button>
+      </div>
+
+      <div class="side-panel-content">
+        <div class="photo-preview">
+          <img src={selectedPhoto.thumb} alt="" />
+        </div>
+
+        <div class="tags-section">
+          <h4><Tag size={18} /> Tags de cette photo</h4>
+          <div class="photo-tags">
+            {#if selectedPhotoTags.length === 0}
+              <p class="no-tags">Aucun tag pour cette photo</p>
+            {:else}
+              {#each selectedPhotoTags as tag (tag.id)}
+                <div class="tag-chip">
+                  <span>{tag.name}</span>
+                  <button
+                    class="remove-tag-btn"
+                    on:click={() => removeTagFromPhoto(tag.id)}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              {/each}
+            {/if}
+          </div>
+        </div>
+
+        <div class="add-tag-section">
+          <h4>Ajouter un tag existant</h4>
+          <div class="available-tags">
+            {#each allTags.filter((t) => !selectedPhotoTags.some((pt) => pt.id === t.id)) as tag (tag.id)}
+              <button class="tag-button" on:click={() => addTagToPhoto(tag.id)}>
+                <Plus size={14} />
+                {tag.name}
+              </button>
+            {:else}
+              <p class="no-tags">Tous les tags sont déjà appliqués</p>
+            {/each}
+          </div>
+        </div>
+
+        <div class="create-tag-section">
+          <h4>Créer un nouveau tag</h4>
+          <form on:submit|preventDefault={createTag} class="create-tag-form">
+            <input
+              type="text"
+              bind:value={newTagName}
+              placeholder="Nom du tag"
+              class="tag-input"
+            />
+            <button
+              type="submit"
+              class="create-tag-btn"
+              disabled={isCreatingTag || !newTagName.trim()}
+            >
+              <Plus size={16} />
+              Créer
+            </button>
+          </form>
+          {#if tagError}
+            <div class="tag-error">{tagError}</div>
+          {/if}
+        </div>
+      </div>
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -544,14 +760,24 @@
     aspect-ratio: 1 / 1;
   }
 
-  .photo-item img {
+  .photo-button {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: block;
+  }
+
+  .photo-button img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
-  .photo-item button {
+  .delete-button {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
@@ -573,11 +799,11 @@
     padding: 0;
   }
 
-  .photo-item button:hover {
+  .delete-button:hover {
     transform: scale(1.1);
   }
 
-  :global(.photo-item button svg) {
+  :global(.delete-button svg) {
     color: var(--ctp-mocha-red);
   }
 
@@ -587,5 +813,230 @@
 
   :global(.sortable-drag) {
     opacity: 0.8;
+  }
+
+  /* Panneau latéral */
+  .side-panel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  .side-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 400px;
+    max-width: 90vw;
+    background-color: var(--ctp-mocha-base);
+    border-left: 1px solid var(--ctp-mocha-overlay0);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .side-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--ctp-mocha-overlay0);
+  }
+
+  .side-panel-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--ctp-mocha-text);
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--ctp-mocha-text);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+
+  .close-btn:hover {
+    background-color: var(--ctp-mocha-surface0);
+  }
+
+  .side-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  .photo-preview {
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--ctp-mocha-overlay0);
+  }
+
+  .photo-preview img {
+    width: 100%;
+    display: block;
+  }
+
+  .tags-section,
+  .add-tag-section,
+  .create-tag-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .tags-section h4,
+  .add-tag-section h4,
+  .create-tag-section h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    color: var(--ctp-mocha-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .photo-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    background-color: var(--ctp-mocha-surface0);
+    border: 1px solid var(--ctp-mocha-overlay0);
+    border-radius: 16px;
+    font-size: 0.875rem;
+    color: var(--ctp-mocha-text);
+  }
+
+  .remove-tag-btn {
+    background: none;
+    border: none;
+    color: var(--ctp-mocha-red);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+
+  .remove-tag-btn:hover {
+    background-color: color-mix(in srgb, var(--ctp-mocha-red) 20%, transparent);
+  }
+
+  .no-tags {
+    color: var(--ctp-mocha-subtext0);
+    font-style: italic;
+    margin: 0;
+  }
+
+  .available-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tag-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    background-color: var(--ctp-mocha-surface0);
+    border: 1px solid var(--ctp-mocha-overlay0);
+    border-radius: 16px;
+    font-size: 0.875rem;
+    color: var(--ctp-mocha-text);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tag-button:hover {
+    background-color: var(--ctp-mocha-surface1);
+    border-color: var(--ctp-mocha-blue);
+  }
+
+  .create-tag-form {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .tag-input {
+    flex: 1;
+    padding: 0.5rem;
+    background-color: var(--ctp-mocha-surface0);
+    border: 1px solid var(--ctp-mocha-overlay0);
+    border-radius: 4px;
+    color: var(--ctp-mocha-text);
+    font-size: 0.875rem;
+  }
+
+  .tag-input:focus {
+    outline: none;
+    border-color: var(--ctp-mocha-blue);
+  }
+
+  .create-tag-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--ctp-mocha-blue);
+    color: var(--ctp-mocha-base);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+
+  .create-tag-btn:hover:not(:disabled) {
+    background-color: var(--ctp-mocha-sapphire);
+  }
+
+  .create-tag-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .tag-error {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: color-mix(
+      in srgb,
+      var(--ctp-mocha-red) 12%,
+      var(--ctp-mocha-surface0)
+    );
+    color: var(--ctp-mocha-red);
+    border: 1px solid var(--ctp-mocha-red);
+    border-radius: 4px;
+    font-size: 0.875rem;
   }
 </style>

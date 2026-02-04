@@ -5,14 +5,15 @@ set -e
 mkdir -p /app/gallery-data/photos/minias
 mkdir -p /app/gallery-data/data
 
-# Initialiser photos.json s'il n'existe pas
-if [ ! -f /app/gallery-data/data/photos.json ]; then
-  echo '[]' > /app/gallery-data/data/photos.json
-  echo "Initialized photos.json"
-fi
-
 # Définir le chemin de la base de données via variable d'environnement
-export DB_PATH=/app/gallery-data/data/photos.json
+export DB_PATH=/app/gallery-data/data/photos.db
+
+# Exécuter les migrations si la base n'existe pas
+if [ ! -f "$DB_PATH" ]; then
+  echo "Creating database and running migrations..."
+  node /app/build/migrate.js
+  echo "Database initialized"
+fi
 
 # Forcer une limite de taille de body généreuse pour les uploads (50 Mo) si non définie
 : "${BODY_SIZE_LIMIT:=52428800}"
