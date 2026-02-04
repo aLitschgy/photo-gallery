@@ -23,6 +23,15 @@ uploads
 static/photos
 src/lib/server/db/photos.json
 
+# Tests
+tests
+*.test.ts
+*.spec.ts
+vitest.config.ts
+
+# Migrations (seront gérées en production différemment)
+drizzle
+
 # Documentation
 *.md
 !README.md
