@@ -1,9 +1,9 @@
+import type { PageServerLoad } from "./$types";
 import fs from "fs";
 import path from "path";
 import { getAllPhotos } from "$lib/server/db/db";
-import { json } from "@sveltejs/kit";
 
-export async function GET() {
+export const load: PageServerLoad = async () => {
   const photosDB = getAllPhotos();
 
   const images = photosDB
@@ -27,9 +27,12 @@ export async function GET() {
         width: photo.width,
         height: photo.height,
         lexoRank: photo.lexoRank,
+        tags: photo.tags || [],
       };
     })
     .filter((p) => p !== null);
 
-  return json(images);
-}
+  return {
+    images,
+  };
+};

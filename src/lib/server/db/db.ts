@@ -6,20 +6,8 @@ import { eq, sql, inArray, and, desc, asc } from "drizzle-orm";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { generateLexoRank, compareLexoRank } from "../utils/lexorank.js";
 import * as schema from "./schema.js";
-
-// Type pour les photos dans la base de données
-export interface Photo {
-  filename: string;
-  width: number;
-  height: number;
-  lexoRank: string;
-}
-
-// Type pour les tags
-export interface Tag {
-  id: number;
-  name: string;
-}
+import type { Photo } from "$lib/types/photo.js";
+import type { Tag } from "$lib/types/tag.js";
 
 // Initialisation de la base de données
 let sqlite: Database.Database | null = null;
@@ -116,11 +104,40 @@ export function deletePhoto(filename: string): boolean {
 /** Récupère toutes les photos triées par LexoRank */
 export function getAllPhotos(): Photo[] {
   const database = getDB();
-  return database
+  const photos = database
     .select()
     .from(schema.photos)
     .orderBy(asc(schema.photos.lexoRank))
     .all();
+
+  // Récupère tous les tags associés aux photos
+  const photoTagsData = database
+    .select({
+      photoFilename: schema.photoTags.photoFilename,
+      tagId: schema.tags.id,
+      tagName: schema.tags.name,
+    })
+    .from(schema.photoTags)
+    .innerJoin(schema.tags, eq(schema.tags.id, schema.photoTags.tagId))
+    .all();
+
+  // Groupe les tags par photo
+  const tagsByPhoto = new Map<string, Tag[]>();
+  for (const pt of photoTagsData) {
+    if (!tagsByPhoto.has(pt.photoFilename)) {
+      tagsByPhoto.set(pt.photoFilename, []);
+    }
+    tagsByPhoto.get(pt.photoFilename)!.push({
+      id: pt.tagId,
+      name: pt.tagName,
+    });
+  }
+
+  // Ajoute les tags à chaque photo
+  return photos.map((photo) => ({
+    ...photo,
+    tags: tagsByPhoto.get(photo.filename) || [],
+  }));
 }
 
 /** Vérifie si une photo existe dans la DB */

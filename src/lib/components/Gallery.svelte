@@ -6,20 +6,11 @@
   import "photoswipe/style.css";
   import { type GalleryImage } from "$lib/types/gallery";
 
-  let galleryContainer: HTMLDivElement;
+  export let images: GalleryImage[] = [];
 
-  let images: GalleryImage[] = [];
+  let galleryContainer: HTMLDivElement;
   let lightbox: PhotoSwipeLightbox | null = null;
   let containerWidth = 0;
-
-  async function loadImages() {
-    const response = await fetch("/gallery.json");
-    const data = await response.json();
-    images = data.sort((a: GalleryImage, b: GalleryImage) =>
-      a.lexoRank.localeCompare(b.lexoRank)
-    );
-    renderGallery();
-  }
 
   function renderGallery() {
     if (!galleryContainer || images.length === 0) return;
@@ -65,7 +56,7 @@
   }
 
   onMount(() => {
-    loadImages();
+    renderGallery();
     window.addEventListener("resize", handleResize);
 
     return () => {
@@ -75,6 +66,11 @@
       }
     };
   });
+
+  // Re-render quand les images changent
+  $: if (images && images.length > 0 && galleryContainer) {
+    renderGallery();
+  }
 
   $: layout =
     images.length > 0 && containerWidth > 0

@@ -1,12 +1,16 @@
 <script lang="ts">
   import Gallery from "$lib/components/Gallery.svelte";
+
+  export let data: any;
 </script>
 
 <svelte:head>
   <title>Photo Gallery</title>
 </svelte:head>
 
-<Gallery />
+{#if data.images}
+  <Gallery images={data.images} />
+{/if}
 
 <footer>
   <p>
@@ -50,6 +54,5 @@
 
   footer a:hover {
     text-decoration: underline;
-    color: var(--ctp-mocha-sapphire);
   }
 </style>
