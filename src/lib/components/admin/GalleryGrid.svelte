@@ -27,8 +27,11 @@
   let isSelectionMode = false;
   let longPressTimer: ReturnType<typeof setTimeout> | null = null;
   let suppressNextPhotoClick = false;
+  let pressStartX: number | null = null;
+  let pressStartY: number | null = null;
 
   const LONG_PRESS_MS = 500;
+  const MOVE_THRESHOLD_PX = 16;
 
   $: selectedCount = selectedFilenames.size;
   $: if (!isSelectionMode) {
@@ -81,10 +84,29 @@
     selectedFilenames = new Set(images.map((p) => p.src.split("/").pop()!));
   }
 
-  function startLongPress(filename: string) {
+  function getPointerPosition(event: MouseEvent | TouchEvent): {
+    x: number;
+    y: number;
+  } {
+    if ("touches" in event) {
+      const touch = event.touches[0] ?? event.changedTouches[0];
+      return {
+        x: touch?.clientX ?? 0,
+        y: touch?.clientY ?? 0,
+      };
+    }
+
+    return { x: event.clientX, y: event.clientY };
+  }
+
+  function startLongPress(filename: string, event: MouseEvent | TouchEvent) {
     if (isSelectionMode) return;
 
     clearLongPress();
+    const point = getPointerPosition(event);
+    pressStartX = point.x;
+    pressStartY = point.y;
+
     longPressTimer = setTimeout(() => {
       enterSelectionMode(filename);
       suppressNextPhotoClick = true;
@@ -92,11 +114,26 @@
     }, LONG_PRESS_MS);
   }
 
+  function handlePressMove(event: MouseEvent | TouchEvent) {
+    if (!longPressTimer || pressStartX === null || pressStartY === null) return;
+
+    const point = getPointerPosition(event);
+    const deltaX = point.x - pressStartX;
+    const deltaY = point.y - pressStartY;
+    const movedDistance = Math.hypot(deltaX, deltaY);
+
+    if (movedDistance > MOVE_THRESHOLD_PX) {
+      clearLongPress();
+    }
+  }
+
   function clearLongPress() {
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       longPressTimer = null;
     }
+    pressStartX = null;
+    pressStartY = null;
   }
 
   function handlePhotoClick(photo: GalleryImage, filename: string) {
@@ -311,10 +348,12 @@
         {/if}
         <button
           class="photo-button"
-          on:mousedown={() => startLongPress(filename || "")}
+          on:mousedown={(event) => startLongPress(filename || "", event)}
+          on:mousemove={handlePressMove}
           on:mouseup={clearLongPress}
           on:mouseleave={clearLongPress}
-          on:touchstart={() => startLongPress(filename || "")}
+          on:touchstart={(event) => startLongPress(filename || "", event)}
+          on:touchmove={handlePressMove}
           on:touchend={clearLongPress}
           on:touchcancel={clearLongPress}
           on:click={() => handlePhotoClick(photo, filename || "")}
