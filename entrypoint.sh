@@ -8,12 +8,11 @@ mkdir -p /app/gallery-data/data
 # Définir le chemin de la base de données via variable d'environnement
 export DB_PATH=/app/gallery-data/data/photos.db
 
-# Exécuter les migrations si la base n'existe pas
-if [ ! -f "$DB_PATH" ]; then
-  echo "Creating database and running migrations..."
-  node /app/build/migrate.js
-  echo "Database initialized"
-fi
+# Exécuter les migrations à chaque démarrage
+# (Drizzle applique uniquement les migrations non encore exécutées)
+echo "Running database migrations (if any pending)..."
+node /app/build/migrate.js
+echo "Database migrations check completed"
 
 # Forcer une limite de taille de body généreuse pour les uploads (50 Mo) si non définie
 : "${BODY_SIZE_LIMIT:=52428800}"

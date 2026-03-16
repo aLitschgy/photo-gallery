@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import {
   getAllPhotos,
+  getHomepagePhotos,
   getAllTags,
   getTagByName,
   getPhotosByAllTags,
@@ -17,7 +18,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
   // Pas de filtre, retourne toutes les photos
   if (!tagsParam) {
-    photosDB = getAllPhotos();
+    photosDB = getHomepagePhotos();
   } else {
     // Parse les tags depuis l'URL
     let mode: "and" | "or" = "and";

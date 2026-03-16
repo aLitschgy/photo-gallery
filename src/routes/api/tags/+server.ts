@@ -1,11 +1,12 @@
 import { createTag, getAllTags } from "$lib/server/db/db";
 import { verifyAuth } from "$lib/server/middleware/auth";
 import { json } from "@sveltejs/kit";
+import type { RequestEvent } from "./$types";
 
 /** GET - Récupère tous les tags */
 export async function GET() {
   try {
-    const tags = getAllTags();
+    const tags = getAllTags().filter((t) => !t.name.startsWith("_"));
     return json({ tags });
   } catch (err) {
     console.error("Erreur lors de la récupération des tags:", err);
@@ -14,7 +15,7 @@ export async function GET() {
 }
 
 /** POST - Crée un nouveau tag */
-export async function POST({ request }) {
+export async function POST({ request }: RequestEvent) {
   const authError = verifyAuth(request);
   if (authError) return authError;
 
@@ -35,6 +36,14 @@ export async function POST({ request }) {
     });
   } catch (err: any) {
     console.error("Erreur lors de la création du tag:", err);
+
+    if (err.message?.startsWith("Nom de tag invalide")) {
+      return json({ error: err.message }, { status: 400 });
+    }
+
+    if (err.message === "Ce tag existe déjà") {
+      return json({ error: "Ce tag existe déjà" }, { status: 409 });
+    }
 
     // Gestion de l'erreur de contrainte unique (tag déjà existant)
     if (err.code === "SQLITE_CONSTRAINT" || err.message?.includes("UNIQUE")) {

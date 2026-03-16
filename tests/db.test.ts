@@ -17,6 +17,9 @@ import {
   getPhotoTags,
   getPhotosByAllTags,
   getPhotosByAnyTag,
+  getHomepagePhotos,
+  setPhotoHidden,
+  HIDDEN_TAG_NAME,
   closeDB,
   runMigrations,
 } from "../src/lib/server/db/db.js";
@@ -132,6 +135,12 @@ describe("Database Tests", () => {
       expect(tag.name).toBe("nature");
     });
 
+    it("devrait normaliser le nom en minuscules", () => {
+      const tag = createTag("  NatURe  ");
+
+      expect(tag.name).toBe("nature");
+    });
+
     it("devrait récupérer tous les tags", () => {
       createTag("nature");
       createTag("urban");
@@ -153,6 +162,25 @@ describe("Database Tests", () => {
 
       expect(tag).toBeDefined();
       expect(tag?.name).toBe("landscape");
+    });
+
+    it("devrait récupérer un tag sans sensibilité à la casse", () => {
+      createTag("Landscape");
+
+      const tag = getTagByName("lAnDsCaPe");
+
+      expect(tag).toBeDefined();
+      expect(tag?.name).toBe("landscape");
+    });
+
+    it("devrait refuser les caractères spéciaux dans un tag", () => {
+      expect(() => createTag("nature!")).toThrow(/Nom de tag invalide/);
+    });
+
+    it("devrait empêcher les doublons insensibles à la casse", () => {
+      createTag("Nature");
+
+      expect(() => createTag("nature")).toThrow();
     });
 
     it("devrait retourner undefined pour un tag inexistant", () => {
@@ -281,6 +309,51 @@ describe("Database Tests", () => {
       const photos = getPhotosByAllTags([]);
 
       expect(photos).toHaveLength(2);
+    });
+
+    it("devrait cacher une photo sur la page d'accueil avec le tag _hidden", () => {
+      const visiblePhoto = addPhoto("visible.jpg", 800, 600);
+      const hiddenPhoto = addPhoto("hidden.jpg", 1024, 768);
+
+      setPhotoHidden(hiddenPhoto.filename, true);
+
+      const homepagePhotos = getHomepagePhotos();
+
+      expect(homepagePhotos.map((p) => p.filename)).toContain(
+        visiblePhoto.filename,
+      );
+      expect(homepagePhotos.map((p) => p.filename)).not.toContain(
+        hiddenPhoto.filename,
+      );
+    });
+
+    it("devrait garder une photo _hidden dans les résultats filtrés par un autre tag", () => {
+      const hiddenTaggedPhoto = addPhoto("hidden-tagged.jpg", 1200, 800);
+      const visibleTaggedPhoto = addPhoto("visible-tagged.jpg", 1200, 800);
+      const natureTag = createTag("nature");
+
+      addTagToPhoto(hiddenTaggedPhoto.filename, natureTag.id);
+      addTagToPhoto(visibleTaggedPhoto.filename, natureTag.id);
+      setPhotoHidden(hiddenTaggedPhoto.filename, true);
+
+      const filteredPhotos = getPhotosByAnyTag([natureTag.id]);
+
+      expect(filteredPhotos.map((p) => p.filename)).toContain(
+        hiddenTaggedPhoto.filename,
+      );
+      expect(filteredPhotos.map((p) => p.filename)).toContain(
+        visibleTaggedPhoto.filename,
+      );
+    });
+
+    it("devrait retirer le tag _hidden quand on ré-affiche une photo", () => {
+      const photo = addPhoto("toggle-hidden.jpg", 800, 600);
+
+      setPhotoHidden(photo.filename, true);
+      setPhotoHidden(photo.filename, false);
+
+      const tags = getPhotoTags(photo.filename);
+      expect(tags.some((tag) => tag.name === HIDDEN_TAG_NAME)).toBe(false);
     });
   });
 

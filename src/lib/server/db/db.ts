@@ -9,6 +9,8 @@ import * as schema from "./schema.js";
 import type { Photo } from "$lib/types/photo.js";
 import type { Tag } from "$lib/types/tag.js";
 
+export const HIDDEN_TAG_NAME = "_hidden";
+
 // Initialisation de la base de données
 let sqlite: Database.Database | null = null;
 let db: ReturnType<typeof drizzle> | null = null;
@@ -43,6 +45,14 @@ function getDB() {
     db = drizzle(sqlite, { schema });
   }
   return db;
+}
+
+function normalizeTagName(name: string): string {
+  return name.trim().replace(/\s+/g, " ").toLocaleLowerCase("fr-FR");
+}
+
+function isValidTagName(name: string): boolean {
+  return /^[\p{L}\p{N} ]+$/u.test(name);
 }
 
 /**
@@ -140,6 +150,13 @@ export function getAllPhotos(): Photo[] {
   }));
 }
 
+/** Récupère les photos visibles sur la page d'accueil (sans le tag système _hidden) */
+export function getHomepagePhotos(): Photo[] {
+  return getAllPhotos().filter(
+    (photo) => !photo.tags?.some((tag) => tag.name === HIDDEN_TAG_NAME),
+  );
+}
+
 /** Vérifie si une photo existe dans la DB */
 export function photoExists(filename: string): boolean {
   const database = getDB();
@@ -217,11 +234,37 @@ export function reorderPhoto(
 /** Crée un nouveau tag */
 export function createTag(name: string): Tag {
   const database = getDB();
-  const result = database.insert(schema.tags).values({ name }).run();
+  const normalizedName = normalizeTagName(name);
+
+  if (normalizedName.length === 0) {
+    throw new Error("Nom de tag invalide: le nom est requis");
+  }
+
+  if (!isValidTagName(normalizedName)) {
+    throw new Error(
+      "Nom de tag invalide: les caractères spéciaux ne sont pas autorisés",
+    );
+  }
+
+  const existingTag = database
+    .select({ id: schema.tags.id })
+    .from(schema.tags)
+    .where(sql`lower(${schema.tags.name}) = ${normalizedName}`)
+    .limit(1)
+    .get();
+
+  if (existingTag) {
+    throw new Error("Ce tag existe déjà");
+  }
+
+  const result = database
+    .insert(schema.tags)
+    .values({ name: normalizedName })
+    .run();
 
   return {
     id: Number(result.lastInsertRowid),
-    name,
+    name: normalizedName,
   };
 }
 
@@ -262,11 +305,70 @@ export function getAllTags(): Tag[] {
 /** Récupère un tag par son nom */
 export function getTagByName(name: string): Tag | undefined {
   const database = getDB();
+
+  const normalizedName = normalizeTagName(name);
+  if (normalizedName.length === 0 || !isValidTagName(normalizedName)) {
+    return undefined;
+  }
+
   return database
     .select()
     .from(schema.tags)
-    .where(eq(schema.tags.name, name))
+    .where(sql`lower(${schema.tags.name}) = ${normalizedName}`)
+    .limit(1)
     .get();
+}
+
+function getHiddenTag(): Tag | undefined {
+  const database = getDB();
+  return database
+    .select()
+    .from(schema.tags)
+    .where(eq(schema.tags.name, HIDDEN_TAG_NAME))
+    .limit(1)
+    .get();
+}
+
+function getOrCreateHiddenTag(): Tag {
+  const database = getDB();
+  const existingTag = getHiddenTag();
+  if (existingTag) {
+    return existingTag;
+  }
+
+  const result = database
+    .insert(schema.tags)
+    .values({ name: HIDDEN_TAG_NAME })
+    .run();
+
+  return {
+    id: Number(result.lastInsertRowid),
+    name: HIDDEN_TAG_NAME,
+  };
+}
+
+/** Active/désactive le tag système _hidden pour une photo */
+export function setPhotoHidden(photoFilename: string, hidden: boolean): void {
+  const database = getDB();
+
+  const photo = database
+    .select({ filename: schema.photos.filename })
+    .from(schema.photos)
+    .where(eq(schema.photos.filename, photoFilename))
+    .limit(1)
+    .get();
+
+  if (!photo) {
+    throw new Error(`Photo ${photoFilename} non trouvée`);
+  }
+
+  const hiddenTag = getOrCreateHiddenTag();
+
+  if (hidden) {
+    addTagToPhoto(photoFilename, hiddenTag.id);
+  } else {
+    removeTagFromPhoto(photoFilename, hiddenTag.id);
+  }
 }
 
 /** Affecte un tag à une photo */

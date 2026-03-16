@@ -7,17 +7,20 @@
     getPhotoTags,
     addTagToPhoto as addTagApi,
     removeTagFromPhoto as removeTagApi,
+    setPhotoHidden as setPhotoHiddenApi,
   } from "$lib/api/admin";
-  import { Tag, X, Plus } from "lucide-svelte";
+  import { Tag, X, Plus, HelpCircle } from "lucide-svelte";
 
   export let photo: GalleryImage;
   export let onClose: () => void;
 
   let allTags: { id: number; name: string }[] = [];
   let photoTags: { id: number; name: string }[] = [];
+  let displayedTags: { id: number; name: string }[] = [];
   let newTagName = "";
   let isCreatingTag = false;
   let tagError = "";
+  let isHidden = false;
 
   $: filename = photo.src.split("/").pop()!;
 
@@ -27,6 +30,19 @@
 
   async function loadPhotoTags() {
     photoTags = await getPhotoTags(filename);
+    isHidden = photoTags.some((t) => t.name === "_hidden");
+    displayedTags = photoTags.filter((t) => !t.name.startsWith("_"));
+  }
+
+  async function toggleHidden() {
+    const newHidden = !isHidden;
+    const result = await setPhotoHiddenApi(filename, newHidden);
+    if (result.success) {
+      isHidden = newHidden;
+      await loadPhotoTags();
+    } else {
+      alert(result.error);
+    }
   }
 
   async function createTag() {
@@ -85,13 +101,38 @@
       <img src={photo.thumb} alt="" />
     </div>
 
+    <div class="visibility-section">
+      <div class="visibility-row">
+        <label class="visibility-label" for="hidden-toggle">
+          Cacher la photo
+          <span class="tooltip-wrapper">
+            <HelpCircle size={14} />
+            <span class="tooltip-text"
+              >Cacher les photos de la page d'accueil (la photo sera toujours
+              visible par son tag)</span
+            >
+          </span>
+        </label>
+        <button
+          id="hidden-toggle"
+          class="toggle-switch"
+          class:active={isHidden}
+          on:click={toggleHidden}
+          role="switch"
+          aria-checked={isHidden}
+        >
+          <span class="toggle-thumb"></span>
+        </button>
+      </div>
+    </div>
+
     <div class="tags-section">
       <h4><Tag size={18} /> Tags de cette photo</h4>
       <div class="photo-tags">
-        {#if photoTags.length === 0}
+        {#if displayedTags.length === 0}
           <p class="no-tags">Aucun tag pour cette photo</p>
         {:else}
-          {#each photoTags as tag (tag.id)}
+          {#each displayedTags as tag (tag.id)}
             <div class="tag-chip">
               <span>{tag.name}</span>
               <button
@@ -219,6 +260,95 @@
     padding: 1.5rem;
   }
 
+  /* ===== Visibility toggle ===== */
+  .visibility-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--ctp-mocha-overlay0);
+  }
+
+  .visibility-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .visibility-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9375rem;
+    color: var(--ctp-mocha-text);
+    user-select: none;
+  }
+
+  .tooltip-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    color: var(--ctp-mocha-subtext0);
+    cursor: default;
+  }
+
+  .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    background-color: var(--ctp-mocha-surface2);
+    color: var(--ctp-mocha-text);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 0.5rem 0.625rem;
+    border-radius: 6px;
+    border: 1px solid var(--ctp-mocha-overlay0);
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 10;
+    white-space: normal;
+  }
+
+  .tooltip-wrapper:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .toggle-switch {
+    flex-shrink: 0;
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    border: none;
+    background-color: var(--ctp-mocha-overlay0);
+    cursor: pointer;
+    padding: 2px;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+  }
+
+  .toggle-switch.active {
+    background-color: var(--ctp-mocha-mauve);
+  }
+
+  .toggle-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--ctp-mocha-base);
+    transition: transform 0.2s;
+    display: block;
+  }
+
+  .toggle-switch.active .toggle-thumb {
+    transform: translateX(20px);
+  }
+
+  /* ===== Photo preview ===== */
   .photo-preview {
     margin-bottom: 1.5rem;
     border-radius: 8px;

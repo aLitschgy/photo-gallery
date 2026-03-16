@@ -123,6 +123,36 @@ export async function removeTagFromPhoto(
   }
 }
 
+// ========== VISIBILITÉ ==========
+
+export async function setPhotoHidden(
+  filename: string,
+  hidden: boolean,
+): Promise<ApiResponse<void>> {
+  try {
+    const response = await fetch(`/api/photos/${filename}/hidden`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + getToken(),
+      },
+      body: JSON.stringify({ hidden }),
+    });
+
+    if (response.ok) {
+      return { success: true };
+    } else {
+      const err = await response.json();
+      return {
+        success: false,
+        error: err.error || "Erreur lors du changement de visibilité",
+      };
+    }
+  } catch (error) {
+    return { success: false, error: "Erreur lors du changement de visibilité" };
+  }
+}
+
 // ========== PHOTOS ==========
 
 export async function uploadPhoto(file: File): Promise<boolean> {
