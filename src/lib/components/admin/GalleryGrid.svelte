@@ -2,8 +2,14 @@
   import { onMount, createEventDispatcher } from "svelte";
   import Sortable from "sortablejs";
   import type { GalleryImage } from "$lib/types/gallery";
-  import { deletePhoto as deletePhotoApi, reorderPhoto } from "$lib/api/admin";
-  import { Trash2, Lightbulb } from "lucide-svelte";
+  import {
+    deletePhoto as deletePhotoApi,
+    reorderPhoto,
+    getAllTags,
+    addTagToPhotosBulk,
+    setPhotosHiddenBulk,
+  } from "$lib/api/admin";
+  import { Trash2, Lightbulb, X } from "lucide-svelte";
 
   export let images: GalleryImage[] = [];
 
@@ -13,6 +19,133 @@
   }>();
 
   let galleryElement: HTMLElement;
+  let sortableInstance: Sortable | null = null;
+  let selectedFilenames = new Set<string>();
+  let availableTags: { id: number; name: string }[] = [];
+  let selectedTagId = "";
+  let isApplyingBulk = false;
+  let isSelectionMode = false;
+  let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+  let suppressNextPhotoClick = false;
+
+  const LONG_PRESS_MS = 500;
+
+  $: selectedCount = selectedFilenames.size;
+  $: if (!isSelectionMode) {
+    clearSelection();
+  }
+  $: if (sortableInstance) {
+    sortableInstance.option("disabled", isSelectionMode);
+  }
+  $: {
+    const imageFilenames = new Set(images.map((p) => p.src.split("/").pop()!));
+    const next = new Set(
+      Array.from(selectedFilenames).filter((filename) =>
+        imageFilenames.has(filename),
+      ),
+    );
+    if (next.size !== selectedFilenames.size) {
+      selectedFilenames = next;
+    }
+  }
+
+  function toggleSelection(filename: string, checked: boolean) {
+    const next = new Set(selectedFilenames);
+    if (checked) {
+      next.add(filename);
+    } else {
+      next.delete(filename);
+    }
+    selectedFilenames = next;
+  }
+
+  function clearSelection() {
+    selectedFilenames = new Set();
+  }
+
+  function enterSelectionMode(initialFilename?: string) {
+    isSelectionMode = true;
+    if (initialFilename) {
+      const next = new Set(selectedFilenames);
+      next.add(initialFilename);
+      selectedFilenames = next;
+    }
+  }
+
+  function exitSelectionMode() {
+    isSelectionMode = false;
+    selectedTagId = "";
+  }
+
+  function selectAllPhotos() {
+    selectedFilenames = new Set(images.map((p) => p.src.split("/").pop()!));
+  }
+
+  function startLongPress(filename: string) {
+    if (isSelectionMode) return;
+
+    clearLongPress();
+    longPressTimer = setTimeout(() => {
+      enterSelectionMode(filename);
+      suppressNextPhotoClick = true;
+      clearLongPress();
+    }, LONG_PRESS_MS);
+  }
+
+  function clearLongPress() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  }
+
+  function handlePhotoClick(photo: GalleryImage, filename: string) {
+    if (suppressNextPhotoClick) {
+      suppressNextPhotoClick = false;
+      return;
+    }
+
+    if (isSelectionMode) {
+      toggleSelection(filename, !selectedFilenames.has(filename));
+      return;
+    }
+
+    dispatch("photoClick", photo);
+  }
+
+  async function applyBulkAddTag() {
+    if (selectedFilenames.size === 0 || !selectedTagId) return;
+
+    isApplyingBulk = true;
+    const filenames = Array.from(selectedFilenames);
+    const result = await addTagToPhotosBulk(filenames, Number(selectedTagId));
+    isApplyingBulk = false;
+
+    if (!result.success) {
+      alert(result.error);
+      return;
+    }
+
+    clearSelection();
+    dispatch("photosChanged");
+  }
+
+  async function applyBulkHidden(hidden: boolean) {
+    if (selectedFilenames.size === 0) return;
+
+    isApplyingBulk = true;
+    const filenames = Array.from(selectedFilenames);
+    const result = await setPhotosHiddenBulk(filenames, hidden);
+    isApplyingBulk = false;
+
+    if (!result.success) {
+      alert(result.error);
+      return;
+    }
+
+    clearSelection();
+    dispatch("photosChanged");
+  }
 
   async function deletePhoto(filename: string | undefined) {
     if (!confirm("Voulez-vous vraiment supprimer cette photo ?")) return;
@@ -27,8 +160,12 @@
   }
 
   onMount(() => {
+    getAllTags().then((tags) => {
+      availableTags = tags;
+    });
+
     if (galleryElement) {
-      new Sortable(galleryElement, {
+      sortableInstance = new Sortable(galleryElement, {
         animation: 300,
         easing: "cubic-bezier(0.4, 0.0, 0.2, 1)",
         ghostClass: "sortable-ghost",
@@ -74,21 +211,113 @@
         },
       });
     }
+
+    return () => {
+      clearLongPress();
+      sortableInstance?.destroy();
+      sortableInstance = null;
+    };
   });
 </script>
 
 <section class="gallery-section">
   <h2>Gestion de la galerie</h2>
   <p class="hint">
-    <Lightbulb /> Glissez-déposez les photos pour réorganiser l'ordre
+    <Lightbulb />
+    {#if isSelectionMode}
+      Mode sélection actif
+    {:else}
+      Glissez-déposez les photos pour réorganiser l'ordre ou appuyez longuement
+      pour activer la sélection multiple
+    {/if}
   </p>
+
+  {#if isSelectionMode}
+    <div class="bulk-actions">
+      <div class="bulk-header">
+        <div class="bulk-label">{selectedCount} photo(s) sélectionnée(s)</div>
+        <button class="close-selection-btn" on:click={exitSelectionMode}>
+          <X size={16} />
+        </button>
+      </div>
+
+      <div class="bulk-controls">
+        <button
+          class="bulk-btn"
+          on:click={selectAllPhotos}
+          disabled={isApplyingBulk || images.length === 0}
+        >
+          Tout sélectionner
+        </button>
+        <select bind:value={selectedTagId} disabled={isApplyingBulk}>
+          <option value="">Ajouter un tag…</option>
+          {#each availableTags as tag (tag.id)}
+            <option value={String(tag.id)}>{tag.name}</option>
+          {/each}
+        </select>
+        <button
+          class="bulk-btn"
+          on:click={applyBulkAddTag}
+          disabled={isApplyingBulk || selectedCount === 0 || !selectedTagId}
+        >
+          Ajouter le tag
+        </button>
+        <button
+          class="bulk-btn"
+          on:click={() => applyBulkHidden(true)}
+          disabled={isApplyingBulk || selectedCount === 0}
+        >
+          Cacher
+        </button>
+        <button
+          class="bulk-btn"
+          on:click={() => applyBulkHidden(false)}
+          disabled={isApplyingBulk || selectedCount === 0}
+        >
+          Afficher
+        </button>
+        <button
+          class="bulk-btn secondary"
+          on:click={clearSelection}
+          disabled={isApplyingBulk || selectedCount === 0}
+        >
+          Réinitialiser
+        </button>
+      </div>
+    </div>
+  {/if}
+
   <div bind:this={galleryElement} class="gallery-grid">
     {#each images as photo (photo.src)}
       {@const filename = photo.src.split("/").pop()}
-      <div class="photo-item" data-filename={filename}>
+      <div
+        class="photo-item"
+        class:selection-mode={isSelectionMode}
+        data-filename={filename}
+      >
+        {#if isSelectionMode}
+          <label class="select-checkbox">
+            <input
+              type="checkbox"
+              checked={selectedFilenames.has(filename || "")}
+              on:click|stopPropagation
+              on:change={(e) =>
+                toggleSelection(
+                  filename || "",
+                  e.currentTarget?.checked ?? false,
+                )}
+            />
+          </label>
+        {/if}
         <button
           class="photo-button"
-          on:click={() => dispatch("photoClick", photo)}
+          on:mousedown={() => startLongPress(filename || "")}
+          on:mouseup={clearLongPress}
+          on:mouseleave={clearLongPress}
+          on:touchstart={() => startLongPress(filename || "")}
+          on:touchend={clearLongPress}
+          on:touchcancel={clearLongPress}
+          on:click={() => handlePhotoClick(photo, filename || "")}
         >
           <img src={photo.thumb} alt="" />
         </button>
@@ -132,6 +361,72 @@
     gap: 1rem;
   }
 
+  .bulk-actions {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--ctp-mocha-overlay0);
+    border-radius: 6px;
+    background: var(--ctp-mocha-surface1);
+  }
+
+  .bulk-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .bulk-label {
+    font-size: 0.875rem;
+    color: var(--ctp-mocha-subtext0);
+  }
+
+  .close-selection-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--ctp-mocha-overlay0);
+    border-radius: 6px;
+    background: var(--ctp-mocha-surface0);
+    color: var(--ctp-mocha-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .bulk-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .bulk-controls select {
+    background: var(--ctp-mocha-base);
+    color: var(--ctp-mocha-text);
+    border: 1px solid var(--ctp-mocha-overlay0);
+    border-radius: 4px;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .bulk-btn {
+    border: 1px solid var(--ctp-mocha-overlay0);
+    background: var(--ctp-mocha-surface0);
+    color: var(--ctp-mocha-text);
+    border-radius: 4px;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+  }
+
+  .bulk-btn.secondary {
+    color: var(--ctp-mocha-subtext0);
+  }
+
+  .bulk-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
   .photo-item {
     position: relative;
     border: 1px solid var(--ctp-mocha-overlay0);
@@ -139,6 +434,24 @@
     overflow: hidden;
     cursor: move;
     aspect-ratio: 1 / 1;
+  }
+
+  .photo-item.selection-mode {
+    cursor: pointer;
+  }
+
+  .select-checkbox {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 2;
+    background: color-mix(in srgb, var(--ctp-mocha-surface0) 85%, transparent);
+    border-radius: 4px;
+    padding: 0.15rem 0.25rem;
+  }
+
+  .select-checkbox input {
+    cursor: pointer;
   }
 
   .photo-button {

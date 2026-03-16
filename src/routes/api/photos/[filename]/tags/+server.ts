@@ -16,7 +16,9 @@ export async function GET({ params }: RequestEvent) {
       return json({ error: "Nom de fichier requis" }, { status: 400 });
     }
 
-    const tags = getPhotoTags(filename);
+    const tags = getPhotoTags(filename).filter(
+      (tag) => !tag.name.startsWith("_"),
+    );
 
     return json({ tags });
   } catch (err) {

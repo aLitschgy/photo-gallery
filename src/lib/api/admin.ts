@@ -66,6 +66,24 @@ export async function getPhotoTags(filename: string): Promise<Tag[]> {
   }
 }
 
+export async function getPhotoHidden(filename: string): Promise<boolean> {
+  try {
+    const response = await fetch(`/api/photos/${filename}/hidden`, {
+      headers: {
+        Authorization: "Bearer " + getToken(),
+      },
+    });
+
+    if (!response.ok) return false;
+
+    const data = await response.json();
+    return data.hidden === true;
+  } catch (error) {
+    console.error("Erreur lors du chargement de la visibilité de la photo:", error);
+    return false;
+  }
+}
+
 export async function addTagToPhoto(
   filename: string,
   tagId: number,
@@ -150,6 +168,65 @@ export async function setPhotoHidden(
     }
   } catch (error) {
     return { success: false, error: "Erreur lors du changement de visibilité" };
+  }
+}
+
+export async function addTagToPhotosBulk(
+  filenames: string[],
+  tagId: number,
+): Promise<ApiResponse<void>> {
+  try {
+    const response = await fetch("/api/photos/bulk/tags", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + getToken(),
+      },
+      body: JSON.stringify({ filenames, tagId }),
+    });
+
+    if (response.ok) {
+      return { success: true };
+    }
+
+    const err = await response.json();
+    return {
+      success: false,
+      error: err.error || "Erreur lors de l'ajout du tag en lot",
+    };
+  } catch (error) {
+    return { success: false, error: "Erreur lors de l'ajout du tag en lot" };
+  }
+}
+
+export async function setPhotosHiddenBulk(
+  filenames: string[],
+  hidden: boolean,
+): Promise<ApiResponse<void>> {
+  try {
+    const response = await fetch("/api/photos/bulk/hidden", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + getToken(),
+      },
+      body: JSON.stringify({ filenames, hidden }),
+    });
+
+    if (response.ok) {
+      return { success: true };
+    }
+
+    const err = await response.json();
+    return {
+      success: false,
+      error: err.error || "Erreur lors du changement de visibilité en lot",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: "Erreur lors du changement de visibilité en lot",
+    };
   }
 }
 

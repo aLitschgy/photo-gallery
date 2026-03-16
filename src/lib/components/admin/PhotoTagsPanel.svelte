@@ -5,6 +5,7 @@
     getAllTags,
     createTag as createTagApi,
     getPhotoTags,
+    getPhotoHidden,
     addTagToPhoto as addTagApi,
     removeTagFromPhoto as removeTagApi,
     setPhotoHidden as setPhotoHiddenApi,
@@ -30,8 +31,11 @@
 
   async function loadPhotoTags() {
     photoTags = await getPhotoTags(filename);
-    isHidden = photoTags.some((t) => t.name === "_hidden");
-    displayedTags = photoTags.filter((t) => !t.name.startsWith("_"));
+    displayedTags = photoTags;
+  }
+
+  async function loadHiddenState() {
+    isHidden = await getPhotoHidden(filename);
   }
 
   async function toggleHidden() {
@@ -39,7 +43,7 @@
     const result = await setPhotoHiddenApi(filename, newHidden);
     if (result.success) {
       isHidden = newHidden;
-      await loadPhotoTags();
+      await Promise.all([loadPhotoTags(), loadHiddenState()]);
     } else {
       alert(result.error);
     }
@@ -82,6 +86,7 @@
   onMount(() => {
     loadTags();
     loadPhotoTags();
+    loadHiddenState();
   });
 </script>
 

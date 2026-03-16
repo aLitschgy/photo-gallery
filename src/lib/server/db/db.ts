@@ -371,6 +371,30 @@ export function setPhotoHidden(photoFilename: string, hidden: boolean): void {
   }
 }
 
+/** Indique si une photo est marquée avec le tag système _hidden */
+export function isPhotoHidden(photoFilename: string): boolean {
+  const database = getDB();
+  const hiddenTag = getHiddenTag();
+
+  if (!hiddenTag) {
+    return false;
+  }
+
+  const relation = database
+    .select({ photoFilename: schema.photoTags.photoFilename })
+    .from(schema.photoTags)
+    .where(
+      and(
+        eq(schema.photoTags.photoFilename, photoFilename),
+        eq(schema.photoTags.tagId, hiddenTag.id),
+      ),
+    )
+    .limit(1)
+    .get();
+
+  return relation !== undefined;
+}
+
 /** Affecte un tag à une photo */
 export function addTagToPhoto(photoFilename: string, tagId: number): void {
   const database = getDB();

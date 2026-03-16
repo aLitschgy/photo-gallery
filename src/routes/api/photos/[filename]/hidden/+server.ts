@@ -1,7 +1,26 @@
-import { setPhotoHidden } from "$lib/server/db/db";
+import { isPhotoHidden, setPhotoHidden } from "$lib/server/db/db";
 import { verifyAuth } from "$lib/server/middleware/auth";
 import { json } from "@sveltejs/kit";
 import type { RequestEvent } from "@sveltejs/kit";
+
+/** GET - Récupère l'état de visibilité d'une photo */
+export async function GET({ params, request }: RequestEvent) {
+  const authError = verifyAuth(request);
+  if (authError) return authError;
+
+  try {
+    const filename = params.filename;
+
+    if (!filename) {
+      return json({ error: "Nom de fichier requis" }, { status: 400 });
+    }
+
+    return json({ hidden: isPhotoHidden(filename) });
+  } catch (err) {
+    console.error("Erreur lors de la récupération de la visibilité:", err);
+    return json({ error: "Erreur serveur" }, { status: 500 });
+  }
+}
 
 /** PUT - Active ou désactive le tag système _hidden sur une photo */
 export async function PUT({ params, request }: RequestEvent) {
