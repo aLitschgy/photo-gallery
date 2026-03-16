@@ -25,6 +25,7 @@
   let selectedTagId = "";
   let isApplyingBulk = false;
   let isSelectionMode = false;
+  let isDragging = false;
   let longPressTimer: ReturnType<typeof setTimeout> | null = null;
   let suppressNextPhotoClick = false;
   let pressStartX: number | null = null;
@@ -100,7 +101,7 @@
   }
 
   function startLongPress(filename: string, event: MouseEvent | TouchEvent) {
-    if (isSelectionMode) return;
+    if (isSelectionMode || isDragging) return;
 
     clearLongPress();
     const point = getPointerPosition(event);
@@ -108,6 +109,10 @@
     pressStartY = point.y;
 
     longPressTimer = setTimeout(() => {
+      if (isDragging) {
+        clearLongPress();
+        return;
+      }
       enterSelectionMode(filename);
       suppressNextPhotoClick = true;
       clearLongPress();
@@ -207,7 +212,12 @@
         easing: "cubic-bezier(0.4, 0.0, 0.2, 1)",
         ghostClass: "sortable-ghost",
         dragClass: "sortable-drag",
+        onStart: function () {
+          isDragging = true;
+          clearLongPress();
+        },
         onEnd: async function (evt) {
+          isDragging = false;
           if (
             typeof evt.oldIndex !== "number" ||
             typeof evt.newIndex !== "number"
@@ -348,6 +358,7 @@
         {/if}
         <button
           class="photo-button"
+          on:contextmenu|preventDefault
           on:mousedown={(event) => startLongPress(filename || "", event)}
           on:mousemove={handlePressMove}
           on:mouseup={clearLongPress}
@@ -358,7 +369,7 @@
           on:touchcancel={clearLongPress}
           on:click={() => handlePhotoClick(photo, filename || "")}
         >
-          <img src={photo.thumb} alt="" />
+          <img src={photo.thumb} alt="" draggable="false" />
         </button>
         <button class="delete-button" on:click={() => deletePhoto(filename)}>
           <Trash2 size={20} />
@@ -501,6 +512,10 @@
     background: none;
     cursor: pointer;
     display: block;
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
   }
 
   .photo-button img {
@@ -508,6 +523,11 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
   }
 
   .delete-button {
