@@ -82,12 +82,12 @@
   .tag-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.375rem 0.75rem;
+    gap: var(--admin-space-xs);
+    padding: var(--admin-space-sm) var(--admin-space-md);
     background-color: var(--ctp-mocha-surface0);
     border: 1px solid var(--ctp-mocha-overlay0);
-    border-radius: 16px;
-    font-size: 0.875rem;
+    border-radius: var(--admin-radius-pill);
+    font-size: var(--admin-text-sm);
     color: var(--ctp-mocha-text);
     max-width: 100%;
   }
@@ -101,9 +101,9 @@
   .tag-chip.clickable {
     cursor: pointer;
     transition:
-      background-color 0.2s,
-      border-color 0.2s,
-      color 0.2s;
+      background-color var(--admin-transition-normal),
+      border-color var(--admin-transition-normal),
+      color var(--admin-transition-normal);
   }
 
   .tag-chip.clickable:hover {
@@ -134,7 +134,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: background-color 0.2s;
+    transition: background-color var(--admin-transition-normal);
   }
 
   .tag-chip.selected .remove-tag-btn {

@@ -136,47 +136,49 @@
 
   .tags-manager-section {
     background: var(--ctp-mocha-surface0);
-    padding: 1.5rem;
-    border-radius: 8px;
+    padding: var(--admin-card-padding);
+    border-radius: var(--admin-card-radius);
     border: 1px solid var(--ctp-mocha-surface1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    margin-bottom: 2rem;
+    box-shadow: var(--admin-card-shadow);
+    margin-bottom: var(--admin-card-margin-bottom);
   }
 
   .tags-manager-section h2 {
-    margin: 0 0 1rem 0;
+    margin: 0 0 var(--admin-space-lg) 0;
     color: var(--ctp-mocha-text);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--admin-gap-sm);
   }
 
   .create-tag-form {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--admin-gap-sm);
     flex-wrap: wrap;
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--admin-space-md);
   }
 
   .create-tag-form input {
     background: var(--ctp-mocha-base);
     color: var(--ctp-mocha-text);
     border: 1px solid var(--ctp-mocha-overlay0);
-    border-radius: 4px;
-    padding: 0.45rem 0.6rem;
+    border-radius: var(--admin-input-radius);
+    padding: var(--admin-input-padding);
     min-width: 220px;
+    font-size: var(--admin-text-sm);
   }
 
   .create-tag-form button {
     border: 1px solid var(--ctp-mocha-overlay0);
     background: var(--ctp-mocha-surface0);
     color: var(--ctp-mocha-text);
-    border-radius: 4px;
-    padding: 0.4rem 0.6rem;
+    border-radius: var(--admin-btn-radius);
+    padding: var(--admin-btn-padding-sm);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: var(--admin-space-xs);
+    font-size: var(--admin-text-sm);
   }
 
   .create-tag-form button:disabled {
@@ -185,8 +187,8 @@
   }
 
   .message {
-    margin: 0.25rem 0 0.75rem 0;
-    font-size: 0.9rem;
+    margin: var(--admin-space-xs) 0 var(--admin-space-md) 0;
+    font-size: var(--admin-text-sm);
   }
 
   .message.error {
@@ -200,7 +202,7 @@
   .tags-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--admin-gap-sm);
     align-items: center;
   }
 

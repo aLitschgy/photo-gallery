@@ -216,14 +216,14 @@
     top: 0;
     right: 0;
     bottom: 0;
-    width: 400px;
-    max-width: 90vw;
+    width: var(--admin-panel-width);
+    max-width: var(--admin-panel-max-width);
     background-color: var(--ctp-mocha-base);
     border-left: 1px solid var(--ctp-mocha-overlay0);
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    animation: slideIn 0.3s ease-out;
+    animation: slideIn var(--admin-transition-slow) ease-out;
   }
 
   @keyframes slideIn {
@@ -239,13 +239,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.5rem;
+    padding: var(--admin-card-padding);
     border-bottom: 1px solid var(--ctp-mocha-overlay0);
   }
 
   .side-panel-header h3 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: var(--admin-text-lg);
     color: var(--ctp-mocha-text);
   }
 
@@ -254,12 +254,12 @@
     border: none;
     color: var(--ctp-mocha-text);
     cursor: pointer;
-    padding: 0.25rem;
+    padding: var(--admin-space-xs);
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+    border-radius: var(--admin-radius-sm);
+    transition: background-color var(--admin-transition-normal);
   }
 
   .close-btn:hover {
@@ -269,13 +269,13 @@
   .side-panel-content {
     flex: 1;
     overflow-y: auto;
-    padding: 1.5rem;
+    padding: var(--admin-card-padding);
   }
 
   /* ===== Visibility toggle ===== */
   .visibility-section {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
+    margin-bottom: var(--admin-space-xl);
+    padding-bottom: var(--admin-space-xl);
     border-bottom: 1px solid var(--ctp-mocha-overlay0);
   }
 
@@ -283,14 +283,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: var(--admin-gap-md);
   }
 
   .visibility-label {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.9375rem;
+    gap: var(--admin-space-xs);
+    font-size: var(--admin-text-sm);
     color: var(--ctp-mocha-text);
     user-select: none;
   }
@@ -307,19 +307,19 @@
     visibility: hidden;
     opacity: 0;
     position: absolute;
-    bottom: calc(100% + 6px);
+    bottom: calc(100% + var(--admin-radius-md));
     left: 50%;
     transform: translateX(-50%);
     width: 220px;
     background-color: var(--ctp-mocha-surface2);
     color: var(--ctp-mocha-text);
-    font-size: 0.75rem;
+    font-size: var(--admin-text-xs);
     line-height: 1.4;
-    padding: 0.5rem 0.625rem;
-    border-radius: 6px;
+    padding: var(--admin-space-sm) var(--admin-space-md);
+    border-radius: var(--admin-radius-md);
     border: 1px solid var(--ctp-mocha-overlay0);
     pointer-events: none;
-    transition: opacity 0.15s;
+    transition: opacity var(--admin-transition-fast);
     z-index: 10;
     white-space: normal;
   }
@@ -338,7 +338,7 @@
     background-color: var(--ctp-mocha-overlay0);
     cursor: pointer;
     padding: 2px;
-    transition: background-color 0.2s;
+    transition: background-color var(--admin-transition-normal);
     display: flex;
     align-items: center;
   }
@@ -362,8 +362,8 @@
 
   /* ===== Photo preview ===== */
   .photo-preview {
-    margin-bottom: 1.5rem;
-    border-radius: 8px;
+    margin-bottom: var(--admin-space-xl);
+    border-radius: var(--admin-radius-lg);
     overflow: hidden;
     border: 1px solid var(--ctp-mocha-overlay0);
   }
@@ -376,24 +376,24 @@
   .tags-section,
   .add-tag-section,
   .create-tag-section {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--admin-space-xl);
   }
 
   .tags-section h4,
   .add-tag-section h4,
   .create-tag-section h4 {
-    margin: 0 0 0.75rem 0;
-    font-size: 1rem;
+    margin: 0 0 var(--admin-space-md) 0;
+    font-size: var(--admin-text-md);
     color: var(--ctp-mocha-text);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--admin-gap-sm);
   }
 
   .photo-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--admin-gap-sm);
   }
 
   .no-tags {
@@ -426,17 +426,17 @@
 
   .create-tag-form {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--admin-gap-sm);
   }
 
   .tag-input {
     flex: 1;
-    padding: 0.5rem;
+    padding: var(--admin-input-padding);
     background-color: var(--ctp-mocha-surface0);
     border: 1px solid var(--ctp-mocha-overlay0);
-    border-radius: 4px;
+    border-radius: var(--admin-input-radius);
     color: var(--ctp-mocha-text);
-    font-size: 0.875rem;
+    font-size: var(--admin-text-sm);
   }
 
   .tag-input:focus {
@@ -447,16 +447,16 @@
   .create-tag-btn {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.5rem 1rem;
+    gap: var(--admin-space-xs);
+    padding: var(--admin-btn-padding-md);
     background-color: var(--ctp-mocha-blue);
     color: var(--ctp-mocha-base);
     border: none;
-    border-radius: 4px;
+    border-radius: var(--admin-btn-radius);
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: var(--admin-text-sm);
     font-weight: 500;
-    transition: background-color 0.2s;
+    transition: background-color var(--admin-transition-normal);
   }
 
   .create-tag-btn:hover:not(:disabled) {
@@ -469,8 +469,8 @@
   }
 
   .tag-error {
-    margin-top: 0.5rem;
-    padding: 0.5rem;
+    margin-top: var(--admin-space-sm);
+    padding: var(--admin-space-sm);
     background-color: color-mix(
       in srgb,
       var(--ctp-mocha-red) 12%,
@@ -478,7 +478,7 @@
     );
     color: var(--ctp-mocha-red);
     border: 1px solid var(--ctp-mocha-red);
-    border-radius: 4px;
-    font-size: 0.875rem;
+    border-radius: var(--admin-radius-sm);
+    font-size: var(--admin-text-sm);
   }
 </style>

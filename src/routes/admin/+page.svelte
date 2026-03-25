@@ -6,6 +6,7 @@
   import { invalidateAll } from "$app/navigation";
   import type { GalleryImage } from "$lib/types/gallery";
   import { LogOut, Camera } from "lucide-svelte";
+  import "$lib/styles/admin-design-tokens.css";
 
   // Import new components
   import UploadSection from "$lib/components/admin/UploadSection.svelte";
@@ -126,8 +127,7 @@
   :global(body) {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-      Ubuntu, Cantarell, sans-serif;
+    font-family: var(--admin-font-family);
     background-color: var(--ctp-mocha-base);
     color: var(--ctp-mocha-text);
   }
@@ -135,7 +135,7 @@
   .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: var(--admin-space-2xl);
     color: var(--ctp-mocha-text);
   }
 
@@ -143,21 +143,21 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: var(--admin-space-2xl);
     background: var(--ctp-mocha-surface0);
-    padding: 1.5rem;
-    border-radius: 8px;
+    padding: var(--admin-card-padding);
+    border-radius: var(--admin-card-radius);
     border: 1px solid var(--ctp-mocha-surface1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--admin-card-shadow);
   }
 
   .header h1 {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: var(--admin-text-xl);
     color: var(--ctp-mocha-text);
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: var(--admin-gap-md);
   }
 
   :global(.header h1 .icon) {
@@ -168,13 +168,13 @@
     background-color: var(--ctp-mocha-red);
     color: var(--ctp-mocha-crust);
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
+    padding: var(--admin-btn-padding-md);
+    border-radius: var(--admin-btn-radius);
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 1rem;
+    gap: var(--admin-gap-sm);
+    font-size: var(--admin-text-md);
     font-weight: 600;
   }
 

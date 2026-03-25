@@ -496,11 +496,11 @@
 
   .gallery-section {
     background: var(--ctp-mocha-surface0);
-    padding: 1.5rem;
-    border-radius: 8px;
+    padding: var(--admin-card-padding);
+    border-radius: var(--admin-card-radius);
     border: 1px solid var(--ctp-mocha-surface1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    margin-bottom: 2rem;
+    box-shadow: var(--admin-card-shadow);
+    margin-bottom: var(--admin-card-margin-bottom);
   }
 
   .gallery-section h2 {
@@ -511,23 +511,26 @@
   .hint {
     color: var(--ctp-mocha-subtext0);
     font-style: italic;
-    margin-bottom: 1rem;
+    margin-bottom: var(--admin-space-lg);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--admin-gap-sm);
   }
 
   .gallery-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(var(--admin-photo-grid-min), 1fr)
+    );
+    gap: var(--admin-photo-grid-gap);
   }
 
   .bulk-actions {
-    margin-bottom: 1rem;
-    padding: 0.75rem;
+    margin-bottom: var(--admin-space-lg);
+    padding: var(--admin-space-md);
     border: 1px solid var(--ctp-mocha-overlay0);
-    border-radius: 6px;
+    border-radius: var(--admin-radius-md);
     background: var(--ctp-mocha-surface1);
   }
 
@@ -535,11 +538,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--admin-space-sm);
   }
 
   .bulk-label {
-    font-size: 0.875rem;
+    font-size: var(--admin-text-sm);
     color: var(--ctp-mocha-subtext0);
   }
 
@@ -547,7 +550,7 @@
     width: 28px;
     height: 28px;
     border: 1px solid var(--ctp-mocha-overlay0);
-    border-radius: 6px;
+    border-radius: var(--admin-radius-md);
     background: var(--ctp-mocha-surface0);
     color: var(--ctp-mocha-text);
     display: flex;
@@ -559,7 +562,7 @@
   .bulk-controls {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--admin-gap-sm);
     align-items: center;
   }
 
@@ -567,16 +570,18 @@
     background: var(--ctp-mocha-base);
     color: var(--ctp-mocha-text);
     border: 1px solid var(--ctp-mocha-overlay0);
-    border-radius: 4px;
-    padding: 0.4rem 0.5rem;
+    border-radius: var(--admin-radius-sm);
+    padding: var(--admin-btn-padding-sm);
+    font-size: var(--admin-text-sm);
   }
 
   .bulk-btn {
     border: 1px solid var(--ctp-mocha-overlay0);
     background: var(--ctp-mocha-surface0);
     color: var(--ctp-mocha-text);
-    border-radius: 4px;
-    padding: 0.4rem 0.6rem;
+    border-radius: var(--admin-radius-sm);
+    padding: var(--admin-btn-padding-sm);
+    font-size: var(--admin-text-sm);
     cursor: pointer;
   }
 
@@ -592,7 +597,7 @@
   .photo-item {
     position: relative;
     border: 1px solid var(--ctp-mocha-overlay0);
-    border-radius: 4px;
+    border-radius: var(--admin-radius-sm);
     overflow: hidden;
     cursor: move;
     aspect-ratio: 1 / 1;
@@ -604,12 +609,12 @@
 
   .select-checkbox {
     position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
+    top: var(--admin-photo-select-offset);
+    left: var(--admin-photo-select-offset);
     z-index: 2;
     background: color-mix(in srgb, var(--ctp-mocha-surface0) 85%, transparent);
-    border-radius: 4px;
-    padding: 0.15rem 0.25rem;
+    border-radius: var(--admin-radius-sm);
+    padding: 0.15rem var(--admin-space-xs);
   }
 
   .select-checkbox input {
@@ -660,8 +665,8 @@
 
   .delete-button {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
+    top: var(--admin-photo-select-offset);
+    right: var(--admin-photo-select-offset);
     background-color: color-mix(
       in srgb,
       var(--ctp-mocha-surface0) 85%,
@@ -669,14 +674,14 @@
     );
     color: var(--ctp-mocha-text);
     border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
+    border-radius: var(--admin-radius-full);
+    width: var(--admin-photo-delete-size);
+    height: var(--admin-photo-delete-size);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform var(--admin-transition-normal);
     padding: 0;
   }
 

@@ -123,11 +123,11 @@
 
   .upload-section {
     background: var(--ctp-mocha-surface0);
-    padding: 1.5rem;
-    border-radius: 8px;
+    padding: var(--admin-card-padding);
+    border-radius: var(--admin-card-radius);
     border: 1px solid var(--ctp-mocha-surface1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    margin-bottom: 2rem;
+    box-shadow: var(--admin-card-shadow);
+    margin-bottom: var(--admin-card-margin-bottom);
   }
 
   .upload-section h2 {
@@ -137,8 +137,8 @@
 
   .upload-form {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: var(--admin-gap-lg);
+    margin-bottom: var(--admin-space-lg);
   }
 
   .file-input-wrapper {
@@ -152,13 +152,13 @@
   .file-label {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    gap: var(--admin-gap-sm);
+    padding: var(--admin-btn-padding-lg);
     background-color: var(--ctp-mocha-surface1);
     border: 2px dashed var(--ctp-mocha-overlay1);
-    border-radius: 4px;
+    border-radius: var(--admin-btn-radius);
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all var(--admin-transition-slow);
   }
 
   .file-label:hover {
@@ -174,13 +174,13 @@
     background-color: var(--ctp-mocha-green);
     color: var(--ctp-mocha-crust);
     border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 4px;
+    padding: var(--admin-btn-padding-lg);
+    border-radius: var(--admin-btn-radius);
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 1rem;
+    gap: var(--admin-gap-sm);
+    font-size: var(--admin-text-md);
     font-weight: 600;
   }
 
@@ -198,25 +198,25 @@
   }
 
   .upload-progress {
-    margin-top: 1rem;
-    padding: 1rem;
+    margin-top: var(--admin-space-lg);
+    padding: var(--admin-space-lg);
     background-color: var(--ctp-mocha-surface1);
-    border-radius: 4px;
+    border-radius: var(--admin-radius-sm);
     border: 1px solid var(--ctp-mocha-overlay0);
   }
 
   .progress-info {
     text-align: center;
-    font-size: 0.875rem;
+    font-size: var(--admin-text-sm);
     color: var(--ctp-mocha-subtext0);
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--admin-space-sm);
   }
 
   .progress-bar-container {
     width: 100%;
     height: 24px;
     background-color: var(--ctp-mocha-surface0);
-    border-radius: 4px;
+    border-radius: var(--admin-radius-sm);
     overflow: hidden;
     border: 1px solid var(--ctp-mocha-overlay0);
   }
@@ -224,21 +224,21 @@
   .progress-bar {
     height: 100%;
     background-color: var(--ctp-mocha-lavender);
-    transition: width 0.3s ease;
+    transition: width var(--admin-transition-slow) ease;
   }
 
   .progress-percentage {
     text-align: center;
-    font-size: 0.875rem;
+    font-size: var(--admin-text-sm);
     color: var(--ctp-mocha-text);
-    margin-top: 0.5rem;
+    margin-top: var(--admin-space-sm);
     font-weight: 600;
   }
 
   .message {
-    padding: 0.75rem;
-    border-radius: 4px;
-    margin-top: 1rem;
+    padding: var(--admin-space-md);
+    border-radius: var(--admin-radius-sm);
+    margin-top: var(--admin-space-lg);
   }
 
   .error-message {
