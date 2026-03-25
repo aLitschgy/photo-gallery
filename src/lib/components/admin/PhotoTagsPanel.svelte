@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, createEventDispatcher } from "svelte";
   import type { GalleryImage } from "$lib/types/gallery";
   import {
     getAllTags,
@@ -11,9 +11,14 @@
     setPhotoHidden as setPhotoHiddenApi,
   } from "$lib/api/admin";
   import { Tag, X, Plus, HelpCircle } from "lucide-svelte";
+  import TagChip from "$lib/components/admin/TagChip.svelte";
 
   export let photo: GalleryImage;
   export let onClose: () => void;
+
+  const dispatch = createEventDispatcher<{
+    photoUpdated: void;
+  }>();
 
   let allTags: { id: number; name: string }[] = [];
   let photoTags: { id: number; name: string }[] = [];
@@ -44,6 +49,7 @@
     if (result.success) {
       isHidden = newHidden;
       await Promise.all([loadPhotoTags(), loadHiddenState()]);
+      dispatch("photoUpdated");
     } else {
       alert(result.error);
     }
@@ -69,6 +75,7 @@
     const result = await addTagApi(filename, tagId);
     if (result.success) {
       await loadPhotoTags();
+      dispatch("photoUpdated");
     } else {
       alert(result.error);
     }
@@ -78,6 +85,7 @@
     const result = await removeTagApi(filename, tagId);
     if (result.success) {
       await loadPhotoTags();
+      dispatch("photoUpdated");
     } else {
       alert(result.error);
     }
@@ -138,15 +146,11 @@
           <p class="no-tags">Aucun tag pour cette photo</p>
         {:else}
           {#each displayedTags as tag (tag.id)}
-            <div class="tag-chip">
-              <span>{tag.name}</span>
-              <button
-                class="remove-tag-btn"
-                on:click={() => removeTagFromPhoto(tag.id)}
-              >
-                <X size={14} />
-              </button>
-            </div>
+            <TagChip
+              label={tag.name}
+              removable={true}
+              on:remove={() => removeTagFromPhoto(tag.id)}
+            />
           {/each}
         {/if}
       </div>
@@ -156,9 +160,12 @@
       <h4>Ajouter un tag existant</h4>
       <div class="available-tags">
         {#each allTags.filter((t) => !photoTags.some((pt) => pt.id === t.id)) as tag (tag.id)}
-          <button class="tag-button" on:click={() => addTagToPhoto(tag.id)}>
-            <Plus size={14} />
-            {tag.name}
+          <button
+            type="button"
+            class="tag-chip-button"
+            on:click={() => addTagToPhoto(tag.id)}
+          >
+            <TagChip label={tag.name} />
           </button>
         {:else}
           <p class="no-tags">Tous les tags sont déjà appliqués</p>
@@ -389,35 +396,6 @@
     gap: 0.5rem;
   }
 
-  .tag-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.375rem 0.75rem;
-    background-color: var(--ctp-mocha-surface0);
-    border: 1px solid var(--ctp-mocha-overlay0);
-    border-radius: 16px;
-    font-size: 0.875rem;
-    color: var(--ctp-mocha-text);
-  }
-
-  .remove-tag-btn {
-    background: none;
-    border: none;
-    color: var(--ctp-mocha-red);
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: background-color 0.2s;
-  }
-
-  .remove-tag-btn:hover {
-    background-color: color-mix(in srgb, var(--ctp-mocha-red) 20%, transparent);
-  }
-
   .no-tags {
     color: var(--ctp-mocha-subtext0);
     font-style: italic;
@@ -430,21 +408,18 @@
     gap: 0.5rem;
   }
 
-  .tag-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.375rem 0.75rem;
-    background-color: var(--ctp-mocha-surface0);
-    border: 1px solid var(--ctp-mocha-overlay0);
-    border-radius: 16px;
-    font-size: 0.875rem;
-    color: var(--ctp-mocha-text);
+  .tag-chip-button {
+    background: none;
+    border: none;
+    padding: 0;
     cursor: pointer;
+  }
+
+  .tag-chip-button :global(.tag-chip) {
     transition: all 0.2s;
   }
 
-  .tag-button:hover {
+  .tag-chip-button:hover :global(.tag-chip) {
     background-color: var(--ctp-mocha-surface1);
     border-color: var(--ctp-mocha-blue);
   }

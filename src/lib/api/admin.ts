@@ -53,6 +53,31 @@ export async function createTag(name: string): Promise<ApiResponse<Tag>> {
   }
 }
 
+export async function deleteTag(tagId: number): Promise<ApiResponse<void>> {
+  try {
+    const response = await fetch("/api/tags", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + getToken(),
+      },
+      body: JSON.stringify({ tagId }),
+    });
+
+    if (response.ok) {
+      return { success: true };
+    }
+
+    const err = await response.json();
+    return {
+      success: false,
+      error: err.error || "Erreur lors de la suppression du tag",
+    };
+  } catch (error) {
+    return { success: false, error: "Erreur lors de la suppression du tag" };
+  }
+}
+
 // ========== PHOTO TAGS ==========
 
 export async function getPhotoTags(filename: string): Promise<Tag[]> {
@@ -79,7 +104,10 @@ export async function getPhotoHidden(filename: string): Promise<boolean> {
     const data = await response.json();
     return data.hidden === true;
   } catch (error) {
-    console.error("Erreur lors du chargement de la visibilité de la photo:", error);
+    console.error(
+      "Erreur lors du chargement de la visibilité de la photo:",
+      error,
+    );
     return false;
   }
 }

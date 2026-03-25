@@ -11,11 +11,18 @@
   import UploadSection from "$lib/components/admin/UploadSection.svelte";
   import GalleryGrid from "$lib/components/admin/GalleryGrid.svelte";
   import PhotoTagsPanel from "$lib/components/admin/PhotoTagsPanel.svelte";
+  import TagsManager from "$lib/components/admin/TagsManager.svelte";
 
   export let data: any;
 
+  type TagsSelectionState = {
+    selectedTagIds: number[];
+  };
+
   let images: GalleryImage[] = data.images || [];
   let selectedPhoto: GalleryImage | null = null;
+  let tagsRefreshKey = 0;
+  let tagsSelectionState: TagsSelectionState = { selectedTagIds: [] };
   let isAuthenticated = false;
   let isChecking = true;
 
@@ -50,6 +57,14 @@
     goto("/login");
   }
 
+  function handleTagsUpdated() {
+    tagsRefreshKey += 1;
+  }
+
+  function handleSelectedTagsChanged(event: CustomEvent<number[]>) {
+    tagsSelectionState = { selectedTagIds: event.detail };
+  }
+
   onMount(async () => {
     await checkAuth();
   });
@@ -72,15 +87,27 @@
 
     <UploadSection on:uploadComplete={loadPhotos} />
 
+    <TagsManager
+      {tagsSelectionState}
+      on:tagsUpdated={handleTagsUpdated}
+      on:selectedTagsChanged={handleSelectedTagsChanged}
+    />
+
     <GalleryGrid
       {images}
+      {tagsRefreshKey}
+      {tagsSelectionState}
       on:photoClick={handlePhotoClick}
       on:photosChanged={loadPhotos}
     />
   </div>
 
   {#if selectedPhoto}
-    <PhotoTagsPanel photo={selectedPhoto} onClose={handlePanelClose} />
+    <PhotoTagsPanel
+      photo={selectedPhoto}
+      onClose={handlePanelClose}
+      on:photoUpdated={loadPhotos}
+    />
   {/if}
 {/if}
 

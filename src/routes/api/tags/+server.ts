@@ -1,4 +1,4 @@
-import { createTag, getAllTags } from "$lib/server/db/db";
+import { createTag, deleteTag, getAllTags } from "$lib/server/db/db";
 import { verifyAuth } from "$lib/server/middleware/auth";
 import { json } from "@sveltejs/kit";
 import type { RequestEvent } from "./$types";
@@ -48,6 +48,35 @@ export async function POST({ request }: RequestEvent) {
     // Gestion de l'erreur de contrainte unique (tag déjà existant)
     if (err.code === "SQLITE_CONSTRAINT" || err.message?.includes("UNIQUE")) {
       return json({ error: "Ce tag existe déjà" }, { status: 409 });
+    }
+
+    return json({ error: "Erreur serveur" }, { status: 500 });
+  }
+}
+
+/** DELETE - Supprime un tag par id */
+export async function DELETE({ request }: RequestEvent) {
+  const authError = verifyAuth(request);
+  if (authError) return authError;
+
+  try {
+    const { tagId } = await request.json();
+
+    if (!Number.isInteger(tagId) || tagId <= 0) {
+      return json({ error: "tagId invalide" }, { status: 400 });
+    }
+
+    const deleted = deleteTag(tagId);
+    if (!deleted) {
+      return json({ error: "Tag introuvable" }, { status: 404 });
+    }
+
+    return json({ success: true });
+  } catch (err: any) {
+    console.error("Erreur lors de la suppression du tag:", err);
+
+    if (err.message?.startsWith("Impossible de supprimer le tag")) {
+      return json({ error: err.message }, { status: 409 });
     }
 
     return json({ error: "Erreur serveur" }, { status: 500 });

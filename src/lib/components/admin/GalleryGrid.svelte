@@ -9,9 +9,13 @@
     addTagToPhotosBulk,
     setPhotosHiddenBulk,
   } from "$lib/api/admin";
-  import { Trash2, Lightbulb, X } from "lucide-svelte";
+  import { Trash2, Lightbulb, X, EyeOff } from "lucide-svelte";
 
   export let images: GalleryImage[] = [];
+  export let tagsRefreshKey = 0;
+  export let tagsSelectionState: { selectedTagIds: number[] } = {
+    selectedTagIds: [],
+  };
 
   const dispatch = createEventDispatcher<{
     photoClick: GalleryImage;
@@ -30,19 +34,32 @@
   let suppressNextPhotoClick = false;
   let pressStartX: number | null = null;
   let pressStartY: number | null = null;
+  let lastSelectionIndex: number | null = null;
+  let lastTagsRefreshKey = tagsRefreshKey;
+  let filteredImages: GalleryImage[] = [];
 
   const LONG_PRESS_MS = 500;
   const MOVE_THRESHOLD_PX = 16;
 
   $: selectedCount = selectedFilenames.size;
+  $: selectedTagIds = tagsSelectionState?.selectedTagIds ?? [];
+  $: hasActiveTagFilter = selectedTagIds.length > 0;
+  $: filteredImages =
+    selectedTagIds.length === 0
+      ? images
+      : images.filter((photo) =>
+          photo.tags?.some((tag) => selectedTagIds.includes(tag.id)),
+        );
   $: if (!isSelectionMode) {
     clearSelection();
   }
   $: if (sortableInstance) {
-    sortableInstance.option("disabled", isSelectionMode);
+    sortableInstance.option("disabled", isSelectionMode || hasActiveTagFilter);
   }
   $: {
-    const imageFilenames = new Set(images.map((p) => p.src.split("/").pop()!));
+    const imageFilenames = new Set(
+      filteredImages.map((p) => p.src.split("/").pop()!),
+    );
     const next = new Set(
       Array.from(selectedFilenames).filter((filename) =>
         imageFilenames.has(filename),
@@ -51,6 +68,14 @@
     if (next.size !== selectedFilenames.size) {
       selectedFilenames = next;
     }
+  }
+  $: if (tagsRefreshKey !== lastTagsRefreshKey) {
+    lastTagsRefreshKey = tagsRefreshKey;
+    loadAvailableTags();
+  }
+
+  async function loadAvailableTags() {
+    availableTags = await getAllTags();
   }
 
   function toggleSelection(filename: string, checked: boolean) {
@@ -65,24 +90,37 @@
 
   function clearSelection() {
     selectedFilenames = new Set();
+    lastSelectionIndex = null;
   }
 
-  function enterSelectionMode(initialFilename?: string) {
+  function enterSelectionMode(initialFilename?: string, initialIndex?: number) {
     isSelectionMode = true;
     if (initialFilename) {
       const next = new Set(selectedFilenames);
       next.add(initialFilename);
       selectedFilenames = next;
     }
+    if (typeof initialIndex === "number") {
+      lastSelectionIndex = initialIndex;
+    }
   }
 
   function exitSelectionMode() {
     isSelectionMode = false;
     selectedTagId = "";
+    lastSelectionIndex = null;
+  }
+
+  function handleGlobalKeydown(event: KeyboardEvent) {
+    if (event.key === "Escape" && isSelectionMode) {
+      exitSelectionMode();
+    }
   }
 
   function selectAllPhotos() {
-    selectedFilenames = new Set(images.map((p) => p.src.split("/").pop()!));
+    selectedFilenames = new Set(
+      filteredImages.map((p) => p.src.split("/").pop()!),
+    );
   }
 
   function getPointerPosition(event: MouseEvent | TouchEvent): {
@@ -100,7 +138,11 @@
     return { x: event.clientX, y: event.clientY };
   }
 
-  function startLongPress(filename: string, event: MouseEvent | TouchEvent) {
+  function startLongPress(
+    filename: string,
+    index: number,
+    event: MouseEvent | TouchEvent,
+  ) {
     if (isSelectionMode || isDragging) return;
 
     clearLongPress();
@@ -113,7 +155,7 @@
         clearLongPress();
         return;
       }
-      enterSelectionMode(filename);
+      enterSelectionMode(filename, index);
       suppressNextPhotoClick = true;
       clearLongPress();
     }, LONG_PRESS_MS);
@@ -141,14 +183,75 @@
     pressStartY = null;
   }
 
-  function handlePhotoClick(photo: GalleryImage, filename: string) {
+  function isPhotoHidden(photo: GalleryImage): boolean {
+    return photo.tags?.some((tag) => tag.name === "_hidden") ?? false;
+  }
+
+  function updateRangeSelection(
+    startIndex: number,
+    endIndex: number,
+    shouldSelect: boolean,
+  ) {
+    const [from, to] =
+      startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+
+    const next = new Set(selectedFilenames);
+    for (let i = from; i <= to; i += 1) {
+      const filename = filteredImages[i]?.src.split("/").pop();
+      if (!filename) continue;
+
+      if (shouldSelect) {
+        next.add(filename);
+      } else {
+        next.delete(filename);
+      }
+    }
+
+    selectedFilenames = next;
+  }
+
+  function handleSelectionToggle(
+    filename: string,
+    index: number,
+    shiftKey: boolean,
+    nextChecked?: boolean,
+  ) {
+    const shouldSelect = nextChecked ?? !selectedFilenames.has(filename);
+
+    if (shiftKey && lastSelectionIndex !== null) {
+      updateRangeSelection(lastSelectionIndex, index, shouldSelect);
+    } else {
+      toggleSelection(filename, shouldSelect);
+    }
+
+    lastSelectionIndex = index;
+  }
+
+  function handleCheckboxChange(filename: string, index: number, event: Event) {
+    const target = event.currentTarget as HTMLInputElement | null;
+    if (!target || !filename) return;
+
+    handleSelectionToggle(
+      filename,
+      index,
+      (event as MouseEvent).shiftKey,
+      target.checked,
+    );
+  }
+
+  function handlePhotoClick(
+    photo: GalleryImage,
+    filename: string,
+    index: number,
+    event: MouseEvent,
+  ) {
     if (suppressNextPhotoClick) {
       suppressNextPhotoClick = false;
       return;
     }
 
     if (isSelectionMode) {
-      toggleSelection(filename, !selectedFilenames.has(filename));
+      handleSelectionToggle(filename, index, event.shiftKey);
       return;
     }
 
@@ -167,8 +270,6 @@
       alert(result.error);
       return;
     }
-
-    clearSelection();
     dispatch("photosChanged");
   }
 
@@ -184,8 +285,6 @@
       alert(result.error);
       return;
     }
-
-    clearSelection();
     dispatch("photosChanged");
   }
 
@@ -202,9 +301,9 @@
   }
 
   onMount(() => {
-    getAllTags().then((tags) => {
-      availableTags = tags;
-    });
+    window.addEventListener("keydown", handleGlobalKeydown);
+
+    loadAvailableTags();
 
     if (galleryElement) {
       sortableInstance = new Sortable(galleryElement, {
@@ -260,6 +359,7 @@
     }
 
     return () => {
+      window.removeEventListener("keydown", handleGlobalKeydown);
       clearLongPress();
       sortableInstance?.destroy();
       sortableInstance = null;
@@ -335,7 +435,7 @@
   {/if}
 
   <div bind:this={galleryElement} class="gallery-grid">
-    {#each images as photo (photo.src)}
+    {#each filteredImages as photo, index (photo.src)}
       {@const filename = photo.src.split("/").pop()}
       <div
         class="photo-item"
@@ -348,29 +448,41 @@
               type="checkbox"
               checked={selectedFilenames.has(filename || "")}
               on:click|stopPropagation
-              on:change={(e) =>
-                toggleSelection(
-                  filename || "",
-                  e.currentTarget?.checked ?? false,
-                )}
+              on:change={(e) => handleCheckboxChange(filename || "", index, e)}
             />
           </label>
         {/if}
         <button
           class="photo-button"
           on:contextmenu|preventDefault
-          on:mousedown={(event) => startLongPress(filename || "", event)}
+          on:mousedown={(event) => startLongPress(filename || "", index, event)}
           on:mousemove={handlePressMove}
           on:mouseup={clearLongPress}
           on:mouseleave={clearLongPress}
-          on:touchstart={(event) => startLongPress(filename || "", event)}
+          on:touchstart={(event) =>
+            startLongPress(filename || "", index, event)}
           on:touchmove={handlePressMove}
           on:touchend={clearLongPress}
           on:touchcancel={clearLongPress}
-          on:click={() => handlePhotoClick(photo, filename || "")}
+          on:click={(event) =>
+            handlePhotoClick(photo, filename || "", index, event)}
         >
-          <img src={photo.thumb} alt="" draggable="false" />
+          <img
+            src={photo.thumb}
+            alt=""
+            draggable="false"
+            class={isPhotoHidden(photo) ? "hidden" : ""}
+          />
         </button>
+        {#if isPhotoHidden(photo)}
+          <div
+            class="hidden-overlay"
+            aria-label="Photo masquée"
+            title="Photo masquée"
+          >
+            <EyeOff size={34} />
+          </div>
+        {/if}
         <button class="delete-button" on:click={() => deletePhoto(filename)}>
           <Trash2 size={20} />
         </button>
@@ -527,6 +639,22 @@
     -webkit-user-drag: none;
     user-select: none;
     -webkit-user-select: none;
+    pointer-events: none;
+  }
+
+  .photo-button img.hidden {
+    opacity: 0.1;
+  }
+
+  .hidden-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--ctp-mocha-surface0) 20%, transparent);
+    color: var(--ctp-mocha-red);
     pointer-events: none;
   }
 
