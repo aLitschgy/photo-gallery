@@ -12,6 +12,15 @@ import {
 
 export const load: PageServerLoad = async ({ params }) => {
   const tagsParam = params.tags;
+  let version = "";
+
+  try {
+    const packageJsonPath = path.join(process.cwd(), "package.json");
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+    version = packageJson.version || "";
+  } catch {
+    console.warn("Impossible de lire la version depuis package.json");
+  }
 
   let photosDB;
   let filterDescription: string | null = null;
@@ -98,5 +107,6 @@ export const load: PageServerLoad = async ({ params }) => {
   return {
     images,
     filterDescription,
+    version,
   };
 };

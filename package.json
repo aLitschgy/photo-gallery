@@ -1,7 +1,7 @@
 {
   "name": "photo-gallery",
-  "version": "2.4.0",
-  "description": "une galerie photos",
+  "version": "2.4.1",
+  "description": "A profesionnal photo gallery built with SvelteKit",
   "homepage": "https://github.com/aLitschgy/photo-gallery#readme",
   "bugs": {
     "url": "https://github.com/aLitschgy/photo-gallery/issues"

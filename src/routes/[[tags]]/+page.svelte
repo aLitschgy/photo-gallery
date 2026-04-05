@@ -15,7 +15,9 @@
 <footer>
   <p>
     &copy; {new Date().getFullYear()} -
-    <a href="https://github.com/aLitschgy/photo-gallery">Photo Gallery</a>
+    <a href="https://github.com/aLitschgy/photo-gallery"
+      >Photo Gallery {data.version ? `v${data.version}` : ""}</a
+    >
     - Antonin Litschgy
   </p>
 </footer>
