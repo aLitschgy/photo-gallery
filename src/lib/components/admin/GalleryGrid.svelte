@@ -191,6 +191,10 @@
     );
   }
 
+  function getFilename(photo: GalleryImage): string {
+    return photo.src.split("/").pop()!;
+  }
+
   function updateRangeSelection(
     startIndex: number,
     endIndex: number,
@@ -327,27 +331,43 @@
           ) {
             return;
           }
-          const movedIndex = evt.newIndex;
-          const movedPhoto = images[evt.oldIndex];
+          const movedPhoto = filteredImages[evt.oldIndex];
           if (!movedPhoto) {
             return;
           }
-          const movedFilename = movedPhoto.src.split("/").pop()!;
+          const movedFilename = getFilename(movedPhoto);
 
-          // Update local array
-          const reordered = [...images];
-          const [removed] = reordered.splice(evt.oldIndex, 1);
-          reordered.splice(evt.newIndex, 0, removed);
+          const visibleWithoutMoved = filteredImages.filter(
+            (_, index) => index !== evt.oldIndex,
+          );
+          const insertionIndex = Math.min(
+            evt.newIndex,
+            visibleWithoutMoved.length,
+          );
+          const nextVisiblePhoto = visibleWithoutMoved[insertionIndex] ?? null;
+
+          const reorderedWithoutMoved = images.filter(
+            (photo) => getFilename(photo) !== movedFilename,
+          );
+
+          const insertAt = nextVisiblePhoto
+            ? reorderedWithoutMoved.findIndex(
+                (photo) => getFilename(photo) === getFilename(nextVisiblePhoto),
+              )
+            : reorderedWithoutMoved.length;
+
+          if (insertAt === -1) {
+            return;
+          }
+
+          const reordered = [...reorderedWithoutMoved];
+          reordered.splice(insertAt, 0, movedPhoto);
           images = reordered;
 
-          const prevPhoto = reordered[movedIndex - 1];
-          const nextPhoto = reordered[movedIndex + 1];
-          const prevFilename = prevPhoto
-            ? prevPhoto.src.split("/").pop()!
-            : null;
-          const nextFilename = nextPhoto
-            ? nextPhoto.src.split("/").pop()!
-            : null;
+          const prevPhoto = reordered[insertAt - 1] ?? null;
+          const nextPhoto = reordered[insertAt + 1] ?? null;
+          const prevFilename = prevPhoto ? getFilename(prevPhoto) : null;
+          const nextFilename = nextPhoto ? getFilename(nextPhoto) : null;
 
           const result = await reorderPhoto(
             movedFilename,

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import { X } from "lucide-svelte";
+  import { is } from "drizzle-orm";
 
   export let label: string;
   export let removable = false;
@@ -15,7 +16,11 @@
 
   function handleRemove() {
     if (disabled) return;
-    dispatch("remove");
+    if (isSelected) {
+      dispatch("select");
+    } else {
+      dispatch("remove");
+    }
   }
 
   function handleSelect() {
