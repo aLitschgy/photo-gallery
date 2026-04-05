@@ -54,7 +54,7 @@
     clearSelection();
   }
   $: if (sortableInstance) {
-    sortableInstance.option("disabled", isSelectionMode || hasActiveTagFilter);
+    sortableInstance.option("disabled", isSelectionMode);
   }
   $: {
     const imageFilenames = new Set(
@@ -183,8 +183,12 @@
     pressStartY = null;
   }
 
-  function isPhotoHidden(photo: GalleryImage): boolean {
-    return photo.tags?.some((tag) => tag.name === "_hidden") ?? false;
+  function showHidenOverlay(photo: GalleryImage): boolean {
+    return (
+      (!hasActiveTagFilter &&
+        photo.tags?.some((tag) => tag.name === "_hidden")) ??
+      false
+    );
   }
 
   function updateRangeSelection(
@@ -471,16 +475,16 @@
             src={photo.thumb}
             alt=""
             draggable="false"
-            class={isPhotoHidden(photo) ? "hidden" : ""}
+            class={showHidenOverlay(photo) ? "hidden" : ""}
           />
         </button>
-        {#if isPhotoHidden(photo)}
+        {#if showHidenOverlay(photo)}
           <div
             class="hidden-overlay"
             aria-label="Photo masquée"
             title="Photo masquée"
           >
-            <EyeOff size={34} />
+            <EyeOff size={30} />
           </div>
         {/if}
         <button class="delete-button" on:click={() => deletePhoto(filename)}>

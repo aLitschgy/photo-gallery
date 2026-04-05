@@ -91,10 +91,22 @@
     }
   }
 
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === "Escape") {
+      onClose();
+    }
+  }
+
   onMount(() => {
+    window.addEventListener("keydown", handleKeydown);
+
     loadTags();
     loadPhotoTags();
     loadHiddenState();
+
+    return () => {
+      window.removeEventListener("keydown", handleKeydown);
+    };
   });
 </script>
 

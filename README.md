@@ -1,6 +1,6 @@
 PhotoGallery is a simple web application to display a public gallery of photos. It allows users to upload images and view them in a responsive gallery format.
 
-**The application has been migrated to SvelteKit for a modern, unified full-stack framework.**
+The admin interface provides an easy way to manage photos, including uploading, reordering, and tagging. The gallery is built with SvelteKit.
 
 ## Features
 
@@ -9,37 +9,6 @@ PhotoGallery is a simple web application to display a public gallery of photos. 
 - PhotoSwipe lightbox for viewing images
 - Drag & drop reordering of photos
 - Automatic thumbnail generation for faster loading
-- JWT authentication
-- Built with SvelteKit (previously Svelte + Express)
-
-## Development
-
-### Prerequisites
-
-- Node.js 20.11+
-- npm
-
-### Running in development mode
-
-```bash
-npm run dev
-```
-
-Then open your browser at `http://localhost:5173`
-
-### Building for production
-
-```bash
-npm run build
-```
-
-This generates optimized files in the `build/` folder.
-
-### Running production build
-
-```bash
-npm start
-```
 
 ## Deployment
 
