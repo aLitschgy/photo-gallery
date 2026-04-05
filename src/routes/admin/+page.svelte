@@ -1,14 +1,9 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import { browser } from "$app/environment";
-  import { auth } from "$lib/stores/auth";
   import { invalidateAll } from "$app/navigation";
   import type { GalleryImage } from "$lib/types/gallery";
   import { LogOut, Camera } from "lucide-svelte";
   import "$lib/styles/admin-design-tokens.css";
 
-  // Import new components
   import UploadSection from "$lib/components/admin/UploadSection.svelte";
   import GalleryGrid from "$lib/components/admin/GalleryGrid.svelte";
   import PhotoTagsPanel from "$lib/components/admin/PhotoTagsPanel.svelte";
@@ -24,20 +19,6 @@
   let selectedPhoto: GalleryImage | null = null;
   let tagsRefreshKey = 0;
   let tagsSelectionState: TagsSelectionState = { selectedTagIds: [] };
-  let isAuthenticated = false;
-  let isChecking = true;
-
-  async function checkAuth() {
-    if (!browser) return;
-
-    const authenticated = await auth.checkToken();
-    if (!authenticated) {
-      goto("/login");
-    } else {
-      isAuthenticated = true;
-      isChecking = false;
-    }
-  }
 
   async function loadPhotos() {
     await invalidateAll();
@@ -53,11 +34,6 @@
     selectedPhoto = null;
   }
 
-  function logout() {
-    auth.logout();
-    goto("/login");
-  }
-
   function handleTagsUpdated() {
     tagsRefreshKey += 1;
   }
@@ -65,64 +41,49 @@
   function handleSelectedTagsChanged(event: CustomEvent<number[]>) {
     tagsSelectionState = { selectedTagIds: event.detail };
   }
-
-  onMount(async () => {
-    await checkAuth();
-  });
 </script>
 
 <svelte:head>
   <title>Admin - Galerie Photo</title>
 </svelte:head>
 
-{#if isChecking}
-  <div class="loading">Vérification...</div>
-{:else if isAuthenticated}
-  <div class="container">
-    <header class="header">
-      <h1><Camera size={32} class="icon" /> Administration de la Galerie</h1>
-      <button class="logout-btn" on:click={logout}>
-        <LogOut size={20} /> Déconnexion
+<div class="container">
+  <header class="header">
+    <h1><Camera size={32} class="icon" /> Administration de la Galerie</h1>
+    <form method="POST" action="?/logout">
+      <button class="logout-btn" type="submit">
+        <LogOut size={20} /> Deconnexion
       </button>
-    </header>
+    </form>
+  </header>
 
-    <UploadSection on:uploadComplete={loadPhotos} />
+  <UploadSection on:uploadComplete={loadPhotos} />
 
-    <TagsManager
-      {tagsSelectionState}
-      on:tagsUpdated={handleTagsUpdated}
-      on:selectedTagsChanged={handleSelectedTagsChanged}
-    />
+  <TagsManager
+    {tagsSelectionState}
+    on:tagsUpdated={handleTagsUpdated}
+    on:selectedTagsChanged={handleSelectedTagsChanged}
+  />
 
-    <GalleryGrid
-      {images}
-      {tagsRefreshKey}
-      {tagsSelectionState}
-      on:photoClick={handlePhotoClick}
-      on:photosChanged={loadPhotos}
-    />
-  </div>
+  <GalleryGrid
+    {images}
+    {tagsRefreshKey}
+    {tagsSelectionState}
+    on:photoClick={handlePhotoClick}
+    on:photosChanged={loadPhotos}
+  />
+</div>
 
-  {#if selectedPhoto}
-    <PhotoTagsPanel
-      photo={selectedPhoto}
-      onClose={handlePanelClose}
-      on:photoUpdated={loadPhotos}
-    />
-  {/if}
+{#if selectedPhoto}
+  <PhotoTagsPanel
+    photo={selectedPhoto}
+    onClose={handlePanelClose}
+    on:photoUpdated={loadPhotos}
+  />
 {/if}
 
 <style>
   @import "@catppuccin/palette/css/catppuccin.css";
-
-  .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    font-size: 1.5rem;
-    color: var(--ctp-mocha-subtext0);
-  }
 
   :global(body) {
     margin: 0;

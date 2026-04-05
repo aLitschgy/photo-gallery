@@ -1,6 +1,5 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { auth } from "$lib/stores/auth";
   import { Lock } from "lucide-svelte";
 
   let password = "";
@@ -20,8 +19,6 @@
       });
 
       if (res.ok) {
-        const data = await res.json();
-        auth.login(data.token);
         goto("/admin");
       } else {
         const err = await res.json();

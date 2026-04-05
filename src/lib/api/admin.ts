@@ -1,8 +1,4 @@
-// API functions for admin operations
-
-function getToken(): string {
-  return localStorage.getItem("token") || "";
-}
+import { deserialize } from "$app/forms";
 
 interface Tag {
   id: number;
@@ -15,293 +11,322 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+type FailureData = {
+  error?: string;
+};
+
+const DEFAULT_ERROR_MESSAGE = "Erreur serveur";
+
+async function submitAdminAction<T extends Record<string, unknown> | undefined>(
+  actionName: string,
+  formData: FormData,
+): Promise<ApiResponse<T>> {
+  try {
+    const response = await fetch(`/admin?/${actionName}`, {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "x-sveltekit-action": "true",
+      },
+      cache: "no-store",
+      body: formData,
+    });
+
+    if (response.redirected) {
+      if (typeof window !== "undefined") {
+        window.location.assign(response.url);
+      }
+
+      return {
+        success: false,
+        error: "Session expirée",
+      };
+    }
+
+    const result = deserialize<T, FailureData>(await response.text());
+
+    if (result.type === "success") {
+      return {
+        success: true,
+        data: result.data,
+      };
+    }
+
+    if (result.type === "failure") {
+      return {
+        success: false,
+        error: result.data?.error || DEFAULT_ERROR_MESSAGE,
+      };
+    }
+
+    if (result.type === "redirect") {
+      if (typeof window !== "undefined") {
+        window.location.assign(result.location);
+      }
+
+      return {
+        success: false,
+        error: "Session expirée",
+      };
+    }
+
+    return {
+      success: false,
+      error: DEFAULT_ERROR_MESSAGE,
+    };
+  } catch (error) {
+    console.error(`Erreur action admin '${actionName}':`, error);
+    return {
+      success: false,
+      error: "Erreur réseau",
+    };
+  }
+}
+
 // ========== TAGS ==========
 
 export async function getAllTags(): Promise<Tag[]> {
-  try {
-    const response = await fetch("/api/tags");
-    const data = await response.json();
-    return data.tags || [];
-  } catch (error) {
-    console.error("Erreur lors du chargement des tags:", error);
+  const result = await submitAdminAction<{ tags: Tag[] }>(
+    "getTags",
+    new FormData(),
+  );
+
+  if (!result.success) {
     return [];
   }
+
+  return result.data?.tags || [];
 }
 
 export async function createTag(name: string): Promise<ApiResponse<Tag>> {
-  try {
-    const response = await fetch("/api/tags", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + getToken(),
-      },
-      body: JSON.stringify({ name: name.trim() }),
-    });
+  const formData = new FormData();
+  formData.append("name", name.trim());
 
-    if (response.ok) {
-      return { success: true };
-    } else {
-      const err = await response.json();
-      return {
-        success: false,
-        error: err.error || "Erreur lors de la création du tag",
-      };
-    }
-  } catch (error) {
-    return { success: false, error: "Erreur lors de la création du tag" };
+  const result = await submitAdminAction<{ success: true; tag: Tag }>(
+    "createTag",
+    formData,
+  );
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error || "Erreur lors de la création du tag",
+    };
   }
+
+  return {
+    success: true,
+    data: result.data?.tag,
+  };
 }
 
 export async function deleteTag(tagId: number): Promise<ApiResponse<void>> {
-  try {
-    const response = await fetch("/api/tags", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + getToken(),
-      },
-      body: JSON.stringify({ tagId }),
-    });
+  const formData = new FormData();
+  formData.append("tagId", String(tagId));
 
-    if (response.ok) {
-      return { success: true };
-    }
+  const result = await submitAdminAction<{ success: true }>(
+    "deleteTag",
+    formData,
+  );
 
-    const err = await response.json();
+  if (!result.success) {
     return {
       success: false,
-      error: err.error || "Erreur lors de la suppression du tag",
+      error: result.error || "Erreur lors de la suppression du tag",
     };
-  } catch (error) {
-    return { success: false, error: "Erreur lors de la suppression du tag" };
   }
+
+  return { success: true };
 }
 
 // ========== PHOTO TAGS ==========
 
 export async function getPhotoTags(filename: string): Promise<Tag[]> {
-  try {
-    const response = await fetch(`/api/photos/${filename}/tags`);
-    const data = await response.json();
-    return data.tags || [];
-  } catch (error) {
-    console.error("Erreur lors du chargement des tags de la photo:", error);
+  const formData = new FormData();
+  formData.append("filename", filename);
+
+  const result = await submitAdminAction<{ tags: Tag[] }>(
+    "getPhotoTags",
+    formData,
+  );
+
+  if (!result.success) {
     return [];
   }
+
+  return result.data?.tags || [];
 }
 
 export async function getPhotoHidden(filename: string): Promise<boolean> {
-  try {
-    const response = await fetch(`/api/photos/${filename}/hidden`, {
-      headers: {
-        Authorization: "Bearer " + getToken(),
-      },
-    });
+  const formData = new FormData();
+  formData.append("filename", filename);
 
-    if (!response.ok) return false;
+  const result = await submitAdminAction<{ hidden: boolean }>(
+    "getPhotoHidden",
+    formData,
+  );
 
-    const data = await response.json();
-    return data.hidden === true;
-  } catch (error) {
-    console.error(
-      "Erreur lors du chargement de la visibilité de la photo:",
-      error,
-    );
+  if (!result.success) {
     return false;
   }
+
+  return result.data?.hidden === true;
 }
 
 export async function addTagToPhoto(
   filename: string,
   tagId: number,
 ): Promise<ApiResponse<void>> {
-  try {
-    const response = await fetch(`/api/photos/${filename}/tags`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + getToken(),
-      },
-      body: JSON.stringify({ tagId }),
-    });
+  const formData = new FormData();
+  formData.append("filename", filename);
+  formData.append("tagId", String(tagId));
 
-    if (response.ok) {
-      return { success: true };
-    } else {
-      const err = await response.json();
-      return {
-        success: false,
-        error: err.error || "Erreur lors de l'ajout du tag",
-      };
-    }
-  } catch (error) {
-    return { success: false, error: "Erreur lors de l'ajout du tag" };
+  const result = await submitAdminAction<{ success: true }>(
+    "addTagToPhoto",
+    formData,
+  );
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error || "Erreur lors de l'ajout du tag",
+    };
   }
+
+  return { success: true };
 }
 
 export async function removeTagFromPhoto(
   filename: string,
   tagId: number,
 ): Promise<ApiResponse<void>> {
-  try {
-    const response = await fetch(
-      `/api/photos/${filename}/tags?tagId=${tagId}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: "Bearer " + getToken(),
-        },
-      },
-    );
+  const formData = new FormData();
+  formData.append("filename", filename);
+  formData.append("tagId", String(tagId));
 
-    if (response.ok) {
-      return { success: true };
-    } else {
-      const err = await response.json();
-      return {
-        success: false,
-        error: err.error || "Erreur lors du retrait du tag",
-      };
-    }
-  } catch (error) {
-    return { success: false, error: "Erreur lors du retrait du tag" };
+  const result = await submitAdminAction<{ success: true }>(
+    "removeTagFromPhoto",
+    formData,
+  );
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error || "Erreur lors du retrait du tag",
+    };
   }
+
+  return { success: true };
 }
 
-// ========== VISIBILITÉ ==========
+// ========== VISIBILITE ==========
 
 export async function setPhotoHidden(
   filename: string,
   hidden: boolean,
 ): Promise<ApiResponse<void>> {
-  try {
-    const response = await fetch(`/api/photos/${filename}/hidden`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + getToken(),
-      },
-      body: JSON.stringify({ hidden }),
-    });
+  const formData = new FormData();
+  formData.append("filename", filename);
+  formData.append("hidden", String(hidden));
 
-    if (response.ok) {
-      return { success: true };
-    } else {
-      const err = await response.json();
-      return {
-        success: false,
-        error: err.error || "Erreur lors du changement de visibilité",
-      };
-    }
-  } catch (error) {
-    return { success: false, error: "Erreur lors du changement de visibilité" };
+  const result = await submitAdminAction<{ success: true }>(
+    "setPhotoHidden",
+    formData,
+  );
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error || "Erreur lors du changement de visibilité",
+    };
   }
+
+  return { success: true };
 }
 
 export async function addTagToPhotosBulk(
   filenames: string[],
   tagId: number,
 ): Promise<ApiResponse<void>> {
-  try {
-    const response = await fetch("/api/photos/bulk/tags", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + getToken(),
-      },
-      body: JSON.stringify({ filenames, tagId }),
-    });
+  const formData = new FormData();
+  for (const filename of filenames) {
+    formData.append("filenames", filename);
+  }
+  formData.append("tagId", String(tagId));
 
-    if (response.ok) {
-      return { success: true };
-    }
+  const result = await submitAdminAction<{ success: true }>(
+    "addTagToPhotosBulk",
+    formData,
+  );
 
-    const err = await response.json();
+  if (!result.success) {
     return {
       success: false,
-      error: err.error || "Erreur lors de l'ajout du tag en lot",
+      error: result.error || "Erreur lors de l'ajout du tag en lot",
     };
-  } catch (error) {
-    return { success: false, error: "Erreur lors de l'ajout du tag en lot" };
   }
+
+  return { success: true };
 }
 
 export async function setPhotosHiddenBulk(
   filenames: string[],
   hidden: boolean,
 ): Promise<ApiResponse<void>> {
-  try {
-    const response = await fetch("/api/photos/bulk/hidden", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + getToken(),
-      },
-      body: JSON.stringify({ filenames, hidden }),
-    });
+  const formData = new FormData();
+  for (const filename of filenames) {
+    formData.append("filenames", filename);
+  }
+  formData.append("hidden", String(hidden));
 
-    if (response.ok) {
-      return { success: true };
-    }
+  const result = await submitAdminAction<{ success: true }>(
+    "setPhotosHiddenBulk",
+    formData,
+  );
 
-    const err = await response.json();
+  if (!result.success) {
     return {
       success: false,
-      error: err.error || "Erreur lors du changement de visibilité en lot",
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: "Erreur lors du changement de visibilité en lot",
+      error: result.error || "Erreur lors du changement de visibilité en lot",
     };
   }
+
+  return { success: true };
 }
 
 // ========== PHOTOS ==========
 
 export async function uploadPhoto(file: File): Promise<boolean> {
-  try {
-    const formData = new FormData();
-    formData.append("photo", file);
+  const formData = new FormData();
+  formData.append("photo", file);
 
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + getToken(),
-      },
-      body: formData,
-    });
+  const result = await submitAdminAction<{ success: true }>(
+    "uploadPhoto",
+    formData,
+  );
 
-    return response.ok;
-  } catch (error) {
-    return false;
-  }
+  return result.success;
 }
 
 export async function deletePhoto(
   filename: string,
 ): Promise<ApiResponse<void>> {
-  try {
-    const response = await fetch("/api/photo/" + filename, {
-      method: "DELETE",
-      headers: {
-        Authorization: "Bearer " + getToken(),
-      },
-    });
+  const formData = new FormData();
+  formData.append("filename", filename);
 
-    if (response.ok) {
-      return { success: true };
-    } else {
-      const err = await response.json().catch(() => ({}));
-      return {
-        success: false,
-        error: err.error || "Erreur lors de la suppression",
-      };
-    }
-  } catch (error) {
-    return { success: false, error: "Erreur lors de la suppression" };
+  const result = await submitAdminAction<{ success: true }>(
+    "deletePhoto",
+    formData,
+  );
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error || "Erreur lors de la suppression",
+    };
   }
+
+  return { success: true };
 }
 
 export async function reorderPhoto(
@@ -309,30 +334,28 @@ export async function reorderPhoto(
   prevFilename: string | null,
   nextFilename: string | null,
 ): Promise<ApiResponse<void>> {
-  try {
-    const response = await fetch("/api/reorder", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + getToken(),
-      },
-      body: JSON.stringify({
-        filename,
-        prevFilename,
-        nextFilename,
-      }),
-    });
+  const formData = new FormData();
+  formData.append("filename", filename);
 
-    if (response.ok) {
-      return { success: true };
-    } else {
-      const err = await response.json().catch(() => ({}));
-      return {
-        success: false,
-        error: err.error || "Erreur lors du réordonnancement",
-      };
-    }
-  } catch (error) {
-    return { success: false, error: "Erreur lors du réordonnancement" };
+  if (prevFilename) {
+    formData.append("prevFilename", prevFilename);
   }
+
+  if (nextFilename) {
+    formData.append("nextFilename", nextFilename);
+  }
+
+  const result = await submitAdminAction<{ success: true }>(
+    "reorderPhoto",
+    formData,
+  );
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error || "Erreur lors du réordonnancement",
+    };
+  }
+
+  return { success: true };
 }
