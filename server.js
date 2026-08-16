@@ -5,6 +5,14 @@ import rateLimit from "express-rate-limit";
 import { fileURLToPath } from "url";
 import { createServer } from "http";
 
+process.on("uncaughtException", (err) => {
+  console.error("💥 uncaughtException:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("💥 unhandledRejection:", reason);
+});
+
 // Let adapter-node reconstruct event.url from standard forwarded headers.
 if (!process.env.PROTOCOL_HEADER) {
   process.env.PROTOCOL_HEADER = "x-forwarded-proto";
@@ -51,7 +59,7 @@ async function createApp() {
 
   // Indispensable derrière Traefik pour que req.ip soit la vraie IP du client
   // (et non celle de Traefik), et pour que express-rate-limit fonctionne correctement.
-  app.set("trust proxy", true);
+  app.set("trust proxy", 1);
 
   app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
