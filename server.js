@@ -51,7 +51,7 @@ async function createApp() {
 
   // Indispensable derrière Traefik pour que req.ip soit la vraie IP du client
   // (et non celle de Traefik), et pour que express-rate-limit fonctionne correctement.
-  app.set("trust proxy", true);
+  app.set("trust proxy", 1);
 
   app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
