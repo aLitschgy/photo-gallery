@@ -30,23 +30,24 @@ async function createApp() {
   const app = express();
   app.set("trust proxy", trustProxy);
 
-  morgan.token("colored-status", (_req, res) => {
+  app.use(morgan((tokens, req, res) => {
     const status = res.statusCode;
-    const color =
-      status >= 500
-        ? "\x1b[31m"
-        : status >= 400
-          ? "\x1b[33m"
-          : status >= 300
-            ? "\x1b[36m"
-            : status >= 200
-              ? "\x1b[32m"
-              : "\x1b[34m";
+    const remoteAddr = tokens["remote-addr"](req, res);
+    const method = tokens.method(req, res);
+    const url = tokens.url(req, res);
+    const responseTime = tokens["response-time"](req, res);
+    const escape = String.fromCharCode(27);
+    const colorCode =
+      status >= 500 ? 31
+        : status >= 400 ? 33
+          : status >= 300 ? 36
+            : status >= 200 ? 32
+              : 34;
 
-    return `${color}${status}\x1b[0m`;
-  });
-
-  app.use(morgan(":remote-addr :url :colored-status"));
+    return `${remoteAddr} => `
+      + `${escape}[${colorCode}m${method} ${status} ${responseTime}ms${escape}[0m`
+      + ` ${url}`;
+  }));
 
   // In direct HTTP mode (no reverse proxy), synthesize forwarded headers so
   // SvelteKit computes the same origin as the browser for CSRF checks.
