@@ -32,6 +32,7 @@ services:
       - PASSWORD=${PASSWORD:-mypassword}
       - SESSION_SECRET=${SESSION_SECRET:-supersecret}
       # Optional:
+      - TRUST_PROXY=0 # Set to 1 if behind a reverse proxy
       - BODY_SIZE_LIMIT=52428800 # 50 MB upload limit
     volumes:
       - ./gallery-data:/app/gallery-data

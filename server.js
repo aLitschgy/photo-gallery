@@ -1,8 +1,6 @@
 import express from "express";
 import morgan from "morgan";
 import path from "path";
-import rateLimit from "express-rate-limit";
-import { fileURLToPath } from "url";
 import { createServer } from "http";
 
 process.on("uncaughtException", (err) => {
@@ -21,47 +19,34 @@ if (!process.env.HOST_HEADER) {
   process.env.HOST_HEADER = "x-forwarded-host";
 }
 
-const { handler } = await import("./build/handler.js");
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Chemins/patterns typiques des bots qui scannent WordPress, PHP, etc.
-const BAD_PATTERNS = [
-  /wp-admin/i,
-  /wp-content/i,
-  /wp-includes/i,
-  /\.php$/i,
-  /xmlrpc\.php/i,
-  /\.env$/i,
-  /\.git/i,
-  /phpmyadmin/i,
-  /\/\.well-known\/index\.php/i,
-];
-
-function badBotFilter(req, res, next) {
-  if (BAD_PATTERNS.some((re) => re.test(req.originalUrl))) {
-    return res.status(403).end();
-  }
-  next();
+const trustProxy = Number(process.env.TRUST_PROXY ?? "0");
+if (!Number.isInteger(trustProxy) || trustProxy < 0) {
+  throw new Error("TRUST_PROXY must be a non-negative integer");
 }
 
-// Limite générale de débit par IP (protège aussi les vraies routes contre le flood)
-const limiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 200, // 200 requêtes / IP / fenêtre
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const { handler } = await import("./build/handler.js");
 
 async function createApp() {
   const app = express();
+  app.set("trust proxy", trustProxy);
 
-  // Indispensable derrière Traefik pour que req.ip soit la vraie IP du client
-  // (et non celle de Traefik), et pour que express-rate-limit fonctionne correctement.
-  app.set("trust proxy", 1);
+  morgan.token("colored-status", (_req, res) => {
+    const status = res.statusCode;
+    const color =
+      status >= 500
+        ? "\x1b[31m"
+        : status >= 400
+          ? "\x1b[33m"
+          : status >= 300
+            ? "\x1b[36m"
+            : status >= 200
+              ? "\x1b[32m"
+              : "\x1b[34m";
 
-  app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+    return `${color}${status}\x1b[0m`;
+  });
+
+  app.use(morgan(":remote-addr :url :colored-status"));
 
   // In direct HTTP mode (no reverse proxy), synthesize forwarded headers so
   // SvelteKit computes the same origin as the browser for CSRF checks.
@@ -76,12 +61,6 @@ async function createApp() {
 
     next();
   });
-
-  // Coupe court aux scans connus avant tout traitement (SvelteKit, static, etc.)
-  app.use(badBotFilter);
-
-  // Limite le débit général par IP
-  app.use(limiter);
 
   // Serve photos from gallery-data/photos directory
   const photosPath = path.join(process.cwd(), "gallery-data", "photos");

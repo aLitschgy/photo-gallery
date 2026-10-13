@@ -6,6 +6,7 @@ services:
     environment:
       - PASSWORD=${PASSWORD:-mypassword}
       - SESSION_SECRET=${SESSION_SECRET:-supersecret}
+      - TRUST_PROXY=${TRUST_PROXY:-0} # Set to 1 if behind a reverse proxy
     volumes:
       - ./gallery-data:/app/gallery-data
     restart: unless-stopped
